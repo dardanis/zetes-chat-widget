@@ -10,7 +10,7 @@ import { SidebarComponent } from './sidebar.component';
   standalone: true,
   imports: [RouterOutlet, HeaderComponent, SidebarComponent],
   template: `
-    <div class="flex h-screen overflow-hidden">
+    <div class="flex h-screen overflow-hidden bg-[var(--app-bg)]">
       <app-sidebar
         [collapsed]="sidebarCollapsed()"
         [mobileOpen]="sidebarMobileOpen()"
@@ -27,7 +27,7 @@ import { SidebarComponent } from './sidebar.component';
           (logout)="logout()"
         />
 
-        <main class="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
+        <main class="flex-1 overflow-y-auto bg-[var(--app-surface-2)] px-4 py-6 sm:px-6 lg:px-8">
           <div class="mx-auto max-w-7xl">
             <router-outlet />
           </div>

@@ -1,5 +1,33 @@
 @import "tailwindcss";
 
+:root {
+  --app-bg: #020617;
+  --app-surface: #0f172a;
+  --app-surface-2: #111827;
+  --app-border: rgb(30 41 59 / 0.8);
+  --app-text: #f1f5f9;
+  --app-text-muted: #94a3b8;
+  --app-accent: #22d3ee;
+  --app-accent-soft: rgb(34 211 238 / 0.12);
+  --app-danger: #fda4af;
+  --app-scroll-thumb: rgb(51 65 85 / 0.5);
+  --app-scroll-thumb-hover: rgb(71 85 105 / 0.7);
+}
+
+html.light {
+  --app-bg: #f8fafc;
+  --app-surface: #ffffff;
+  --app-surface-2: #f1f5f9;
+  --app-border: rgb(203 213 225 / 0.9);
+  --app-text: #0f172a;
+  --app-text-muted: #475569;
+  --app-accent: #0891b2;
+  --app-accent-soft: rgb(8 145 178 / 0.1);
+  --app-danger: #dc2626;
+  --app-scroll-thumb: rgb(148 163 184 / 0.65);
+  --app-scroll-thumb-hover: rgb(100 116 139 / 0.75);
+}
+
 html,
 body {
   height: 100%;
@@ -10,12 +38,14 @@ body {
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--app-bg);
+  color: var(--app-text);
 }
 
 /* Thin dark scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgb(51 65 85 / 0.5) transparent;
+  scrollbar-color: var(--app-scroll-thumb) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -26,9 +56,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgb(51 65 85 / 0.5);
+  background: var(--app-scroll-thumb);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(71 85 105 / 0.7);
+  background: var(--app-scroll-thumb-hover);
 }

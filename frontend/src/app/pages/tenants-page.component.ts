@@ -10,22 +10,22 @@ import { RagApiService, Tenant } from '../core/rag-api.service';
   template: `
     <section class="space-y-6">
       <div>
-        <h2 class="text-xl font-semibold">Tenants</h2>
-        <p class="mt-1 text-sm text-slate-400">Manage your organizations. Each tenant can have multiple projects.</p>
+        <h2 class="text-xl font-semibold text-[var(--app-text)]">Tenants</h2>
+        <p class="mt-1 text-sm text-[var(--app-text-muted)]">Manage your organizations. Each tenant can have multiple projects.</p>
       </div>
 
       <!-- Create tenant -->
-      <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
-        <h3 class="text-sm font-semibold text-slate-200">Create tenant</h3>
+      <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
+        <h3 class="text-sm font-semibold text-[var(--app-text)]">Create tenant</h3>
 
         @if (createError()) {
-          <p class="mt-3 rounded-md border border-red-900 bg-red-950/60 px-3 py-2 text-sm text-red-200">{{ createError() }}</p>
+          <p class="mt-3 rounded-md border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 px-3 py-2 text-sm text-[var(--app-danger)]">{{ createError() }}</p>
         }
 
         <div class="mt-3 flex gap-2">
-          <input name="tenantName" [(ngModel)]="newName" placeholder="Tenant name" class="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none ring-cyan-400/40 transition placeholder:text-slate-500 focus:border-slate-600 focus:ring-2" />
-          <button type="button" (click)="create()" [disabled]="isCreating()" class="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60">
-            {{ isCreating() ? 'Creating…' : 'Add tenant' }}
+          <input name="tenantName" [(ngModel)]="newName" placeholder="Tenant name" class="min-w-0 flex-1 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition placeholder:text-[var(--app-text-muted)] focus:ring-2" />
+          <button type="button" (click)="create()" [disabled]="isCreating()" class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60">
+            {{ isCreating() ? 'Creating...' : 'Add tenant' }}
           </button>
         </div>
       </div>
@@ -33,48 +33,48 @@ import { RagApiService, Tenant } from '../core/rag-api.service';
       <!-- Tenant list -->
       @if (isLoading()) {
         <div class="space-y-3">
-          <div class="h-20 animate-pulse rounded-xl border border-slate-800 bg-slate-900/40"></div>
-          <div class="h-20 animate-pulse rounded-xl border border-slate-800 bg-slate-900/40"></div>
+          <div class="h-20 animate-pulse rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"></div>
+          <div class="h-20 animate-pulse rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"></div>
         </div>
       } @else {
         <div class="space-y-3">
           @for (tenant of tenants(); track tenant.id) {
-            <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+            <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
               @if (editingId() === tenant.id) {
                 <!-- Edit mode -->
                 <div class="flex items-center gap-3">
-                  <input [(ngModel)]="editName" class="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none ring-cyan-400/40 focus:border-slate-600 focus:ring-2" />
-                  <button type="button" (click)="saveEdit(tenant)" [disabled]="isSaving()" class="rounded-lg bg-cyan-400 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60">Save</button>
-                  <button type="button" (click)="cancelEdit()" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">Cancel</button>
+                  <input [(ngModel)]="editName" class="min-w-0 flex-1 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 focus:ring-2" />
+                  <button type="button" (click)="saveEdit(tenant)" [disabled]="isSaving()" class="rounded-lg bg-[var(--app-accent)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">Save</button>
+                  <button type="button" (click)="cancelEdit()" class="rounded-lg border border-[var(--app-border)] px-3 py-2 text-sm text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Cancel</button>
                 </div>
               } @else if (deletingId() === tenant.id) {
                 <!-- Delete confirmation -->
                 <div class="flex items-center justify-between">
-                  <p class="text-sm text-red-200">Delete <strong>{{ tenant.name }}</strong>? This will remove all projects and data.</p>
+                  <p class="text-sm text-[var(--app-danger)]">Delete <strong>{{ tenant.name }}</strong>? This will remove all projects and data.</p>
                   <div class="flex gap-2">
-                    <button type="button" (click)="confirmDelete(tenant)" [disabled]="isDeleting()" class="rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-white hover:bg-red-400 disabled:opacity-60">Delete</button>
-                    <button type="button" (click)="cancelDelete()" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">Cancel</button>
+                    <button type="button" (click)="confirmDelete(tenant)" [disabled]="isDeleting()" class="rounded-lg bg-[var(--app-danger)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">Delete</button>
+                    <button type="button" (click)="cancelDelete()" class="rounded-lg border border-[var(--app-border)] px-3 py-2 text-sm text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Cancel</button>
                   </div>
                 </div>
               } @else {
                 <!-- Display mode -->
                 <div class="flex items-center justify-between gap-4">
                   <div>
-                    <p class="font-medium text-slate-100">{{ tenant.name }}</p>
-                    <p class="mt-1 text-xs text-slate-500">Tenant #{{ tenant.id }}</p>
+                    <p class="font-medium text-[var(--app-text)]">{{ tenant.name }}</p>
+                    <p class="mt-1 text-xs text-[var(--app-text-muted)]">Tenant #{{ tenant.id }}</p>
                   </div>
                   <div class="flex gap-2">
-                    <button type="button" (click)="startEdit(tenant)" class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:bg-slate-800">Edit</button>
-                    <button type="button" (click)="startDelete(tenant)" class="rounded-lg border border-red-900/50 px-3 py-1.5 text-xs font-medium text-red-300 transition hover:border-red-700 hover:bg-red-950/40">Delete</button>
+                    <button type="button" (click)="startEdit(tenant)" class="rounded-lg border border-[var(--app-border)] px-3 py-1.5 text-xs font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)]">Edit</button>
+                    <button type="button" (click)="startDelete(tenant)" class="rounded-lg border border-[var(--app-danger)]/50 px-3 py-1.5 text-xs font-medium text-[var(--app-danger)] transition hover:bg-[var(--app-danger)]/10">Delete</button>
                   </div>
                 </div>
               }
             </div>
           } @empty {
             <div class="py-12 text-center">
-              <svg class="mx-auto h-10 w-10 text-slate-600" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/></svg>
-              <p class="mt-3 text-sm text-slate-400">No tenants yet</p>
-              <p class="mt-1 text-xs text-slate-500">Create your first tenant above to get started.</p>
+              <svg class="mx-auto h-10 w-10 text-[var(--app-text-muted)]" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/></svg>
+              <p class="mt-3 text-sm text-[var(--app-text-muted)]">No tenants yet</p>
+              <p class="mt-1 text-xs text-[var(--app-text-muted)]">Create your first tenant above to get started.</p>
             </div>
           }
         </div>

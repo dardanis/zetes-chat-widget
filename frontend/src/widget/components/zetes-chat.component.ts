@@ -2,13 +2,18 @@ import {
   Component,
   ElementRef,
   Input,
+  OnChanges,
+  OnDestroy,
   OnInit,
+  SimpleChanges,
   ViewEncapsulation,
   inject,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.service';
+import { ChatMessage, WidgetApiService } from '../services/widget-api.service';
+
+type WidgetTheme = 'auto' | 'dark' | 'light';
 
 @Component({
   selector: 'zetes-chat-widget',
@@ -16,6 +21,9 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
   imports: [FormsModule],
   encapsulation: ViewEncapsulation.ShadowDom,
   providers: [WidgetApiService],
+  host: {
+    '[attr.data-theme]': 'activeTheme',
+  },
   template: `
     <!-- Floating trigger button -->
     @if (!panelOpen()) {
@@ -47,7 +55,7 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
           @if (isCreatingSession()) {
             <div class="status-message">
               <div class="spinner"></div>
-              <span>Starting chat session…</span>
+              <span>Starting chat session...</span>
             </div>
           } @else if (sessionError()) {
             <div class="status-message error-text">
@@ -72,7 +80,7 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
                     <div class="citation">
                       <div class="citation-doc">{{ cite.document_name ?? 'Document' }}</div>
                       @if (cite.page_from != null) {
-                        <div class="citation-pages">Pages {{ cite.page_from }}–{{ cite.page_to ?? cite.page_from }}</div>
+                        <div class="citation-pages">Pages {{ cite.page_from }}-{{ cite.page_to ?? cite.page_from }}</div>
                       }
                       @if (cite.excerpt) {
                         <div class="citation-excerpt">{{ cite.excerpt }}</div>
@@ -103,7 +111,7 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
             <textarea
               class="msg-input"
               rows="2"
-              placeholder="Type your question…"
+              placeholder="Type your question..."
               [disabled]="!api.hasSession || isSending()"
               [(ngModel)]="draft"
               (keydown.enter)="onEnterKey($event)"
@@ -148,6 +156,20 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
       color: var(--zc-text);
     }
 
+    :host([data-theme='light']) {
+      --zc-primary: #0891b2;
+      --zc-primary-hover: #0e7490;
+      --zc-bg: #ffffff;
+      --zc-surface: #f8fafc;
+      --zc-surface-alt: #f1f5f9;
+      --zc-border: #cbd5e1;
+      --zc-text: #0f172a;
+      --zc-text-muted: #475569;
+      --zc-text-dim: #64748b;
+      --zc-error: #dc2626;
+      --zc-error-bg: rgba(220, 38, 38, 0.1);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     /* Trigger button */
@@ -156,7 +178,7 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
       border-radius: 50%;
       border: none;
       background: var(--zc-primary);
-      color: var(--zc-bg);
+      color: #ffffff;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 4px 24px rgba(0,0,0,0.35);
@@ -191,7 +213,8 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
     .header-brand { display: flex; align-items: center; gap: 10px; }
     .brand-icon {
       width: 30px; height: 30px; border-radius: 8px;
-      background: rgba(34,211,238,0.15); color: var(--zc-primary);
+      background: color-mix(in srgb, var(--zc-primary) 16%, transparent);
+      color: var(--zc-primary);
       display: flex; align-items: center; justify-content: center;
       font-weight: 700; font-size: 13px;
     }
@@ -208,7 +231,7 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
       flex: 1; overflow-y: auto; padding: 16px;
       display: flex; flex-direction: column; gap: 12px;
       scrollbar-width: thin;
-      scrollbar-color: rgba(51,65,85,0.5) transparent;
+      scrollbar-color: color-mix(in srgb, var(--zc-border) 85%, transparent) transparent;
     }
 
     .status-message {
@@ -232,7 +255,7 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
     }
     .msg-user {
       align-self: flex-end;
-      background: var(--zc-primary); color: var(--zc-bg);
+      background: var(--zc-primary); color: #ffffff;
       border-bottom-right-radius: 4px;
     }
     .msg-assistant {
@@ -263,7 +286,8 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
     /* Citations */
     .citations {
       margin-top: 8px; padding: 8px 10px;
-      background: rgba(15,23,42,0.6); border-radius: 8px;
+      background: color-mix(in srgb, var(--zc-bg) 55%, transparent);
+      border-radius: 8px;
       border: 1px solid var(--zc-border);
     }
     .citations-label {
@@ -285,7 +309,7 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
     .chat-error {
       padding: 6px 10px; margin-bottom: 8px; border-radius: 6px;
       font-size: 12px; color: var(--zc-error);
-      background: var(--zc-error-bg); border: 1px solid rgba(127,29,29,0.5);
+      background: var(--zc-error-bg); border: 1px solid color-mix(in srgb, var(--zc-error) 40%, transparent);
     }
     .input-row { display: flex; gap: 8px; align-items: flex-end; }
     .msg-input {
@@ -302,7 +326,7 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
 
     .send-btn {
       width: 38px; height: 38px; border-radius: 8px;
-      border: none; background: var(--zc-primary); color: var(--zc-bg);
+      border: none; background: var(--zc-primary); color: #ffffff;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: background 0.15s, opacity 0.15s; flex-shrink: 0;
     }
@@ -326,10 +350,11 @@ import { ChatMessage, Citation, WidgetApiService } from '../services/widget-api.
     @keyframes spin { to { transform: rotate(360deg); } }
   `],
 })
-export class ZetesChatComponent implements OnInit {
+export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
   @Input({ alias: 'widget-key' }) widgetKey = '';
   @Input({ alias: 'widget-secret' }) widgetSecret = '';
   @Input({ alias: 'api-base-url' }) apiBaseUrl = '';
+  @Input({ alias: 'widget-theme' }) widgetTheme: WidgetTheme | string = 'auto';
 
   protected readonly api = inject(WidgetApiService);
   private readonly elRef = inject(ElementRef);
@@ -341,9 +366,28 @@ export class ZetesChatComponent implements OnInit {
   protected readonly isSending = signal(false);
   protected readonly chatError = signal('');
   protected draft = '';
+  protected activeTheme: Exclude<WidgetTheme, 'auto'> = 'dark';
+
+  private mediaQueryList?: MediaQueryList;
+  private readonly onSystemThemeChange = (event: MediaQueryListEvent): void => {
+    if (this.normalizeWidgetTheme() === 'auto') {
+      this.activeTheme = event.matches ? 'light' : 'dark';
+    }
+  };
 
   ngOnInit(): void {
     this.api.configure(this.apiBaseUrl, this.widgetKey, this.widgetSecret);
+    this.resolveTheme();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['widgetTheme']) {
+      this.resolveTheme();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.unregisterSystemThemeListener();
   }
 
   protected openPanel(): void {
@@ -391,7 +435,7 @@ export class ZetesChatComponent implements OnInit {
       },
       error: (err) => {
         this.chatError.set(err?.error?.message ?? 'Failed to send message. Please try again.');
-        this.draft = text; // restore draft so user doesn't lose input
+        this.draft = text;
         this.isSending.set(false);
       },
       complete: () => this.isSending.set(false),
@@ -410,6 +454,64 @@ export class ZetesChatComponent implements OnInit {
       },
       complete: () => this.isCreatingSession.set(false),
     });
+  }
+
+  private resolveTheme(): void {
+    const requestedTheme = this.normalizeWidgetTheme();
+
+    if (requestedTheme === 'auto') {
+      this.registerSystemThemeListener();
+      this.activeTheme = this.getSystemTheme();
+      return;
+    }
+
+    this.unregisterSystemThemeListener();
+    this.activeTheme = requestedTheme;
+  }
+
+  private normalizeWidgetTheme(): WidgetTheme {
+    const value = this.readWidgetThemeValue();
+    return value === 'light' || value === 'dark' || value === 'auto' ? value : 'auto';
+  }
+
+  private readWidgetThemeValue(): string {
+    const inputValue = String(this.widgetTheme ?? '').trim().toLowerCase();
+    const hostAttrValue = String(this.elRef.nativeElement.getAttribute('widget-theme') ?? '').trim().toLowerCase();
+
+    // Prefer explicit input values, but if input is still default/empty, use host attribute.
+    if (inputValue && inputValue !== 'auto') {
+      return inputValue;
+    }
+
+    return hostAttrValue || inputValue || 'auto';
+  }
+
+  private getSystemTheme(): 'dark' | 'light' {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return 'dark';
+    }
+
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+
+  private registerSystemThemeListener(): void {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return;
+    }
+
+    if (!this.mediaQueryList) {
+      this.mediaQueryList = window.matchMedia('(prefers-color-scheme: light)');
+      this.mediaQueryList.addEventListener('change', this.onSystemThemeChange);
+    }
+  }
+
+  private unregisterSystemThemeListener(): void {
+    if (!this.mediaQueryList) {
+      return;
+    }
+
+    this.mediaQueryList.removeEventListener('change', this.onSystemThemeChange);
+    this.mediaQueryList = undefined;
   }
 
   private scrollToBottom(): void {
