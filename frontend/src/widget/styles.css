@@ -1,0 +1,5 @@
+/* Minimal reset — component styles are in ShadowDom */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+

@@ -1,0 +1,13 @@
+<main class="min-h-screen bg-slate-950 text-slate-100 antialiased">
+  @if (auth.isBootstrapping()) {
+    <section class="flex min-h-screen items-center justify-center">
+      <div class="text-center">
+        <div class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-cyan-400"></div>
+        <p class="mt-4 text-sm text-slate-400">Restoring session…</p>
+      </div>
+    </section>
+  } @else {
+    <router-outlet />
+  }
+</main>
+
