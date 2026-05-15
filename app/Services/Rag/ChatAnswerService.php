@@ -55,7 +55,8 @@ class ChatAnswerService
         $normalized = $this->generationService->generate(
             "Rewrite the following assistant answer to sound natural, clear, and concise.\n".
             "Do not add new facts. Keep it grounded to context.\n".
-            "If evidence is weak, explicitly say context is insufficient.\n\n".
+            "If evidence is weak, explicitly say context is insufficient.\n".
+            "IMPORTANT: Output ONLY the rewritten answer text. Do NOT include any preamble, introduction, or meta-commentary such as \"Here's a rewritten version\".\n\n".
             "Answer to normalize:\n{$draft}"
         );
 

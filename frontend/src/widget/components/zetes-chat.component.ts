@@ -72,23 +72,6 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
             <div [class]="msg.role === 'assistant' ? 'msg msg-assistant' : 'msg msg-user'">
               <div class="msg-role">{{ msg.role === 'assistant' ? 'Assistant' : 'You' }}</div>
               <div class="msg-content">{{ msg.content }}</div>
-
-              @if (msg.role === 'assistant' && msg.citations && msg.citations.length > 0) {
-                <div class="citations">
-                  <div class="citations-label">Sources</div>
-                  @for (cite of msg.citations; track $index) {
-                    <div class="citation">
-                      <div class="citation-doc">{{ cite.document_name ?? 'Document' }}</div>
-                      @if (cite.page_from != null) {
-                        <div class="citation-pages">Pages {{ cite.page_from }}-{{ cite.page_to ?? cite.page_from }}</div>
-                      }
-                      @if (cite.excerpt) {
-                        <div class="citation-excerpt">{{ cite.excerpt }}</div>
-                      }
-                    </div>
-                  }
-                </div>
-              }
             </div>
           }
 
