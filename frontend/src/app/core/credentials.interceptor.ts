@@ -7,8 +7,9 @@ export const credentialsInterceptor: HttpInterceptorFn = (req, next) => {
   let nextRequest = shouldAttachCredentials ? req.clone({ withCredentials: true }) : req;
 
   // Add CSRF header explicitly for mutating calls to avoid browser/XSRF interceptor edge cases.
+  // Prefer the project cookie, but fall back to Laravel's default cookie name.
   if (isMutatingRequest && shouldAttachCredentials) {
-    const xsrfToken = getCookieValue('XSRF-TOKEN');
+    const xsrfToken = getCookieValue('ZETES-XSRF-TOKEN') ?? getCookieValue('XSRF-TOKEN');
 
     if (xsrfToken) {
       nextRequest = nextRequest.clone({
