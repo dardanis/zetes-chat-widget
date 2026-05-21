@@ -2,13 +2,20 @@
 
 namespace Tests\Feature;
 
+use App\Events\ProjectChatMessageCreated;
 use App\Models\ChatSession;
+use App\Models\DocumentChunk;
+use App\Models\ProjectDocument;
 use App\Models\Project;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Rag\ChatAnswerService;
 use App\Models\ChatMessage;
+use App\Services\Rag\ContextRetrievalService;
+use App\Services\Rag\OllamaEmbeddingService;
+use App\Services\Rag\OllamaGenerationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Mockery;
 use Tests\TestCase;
 
@@ -76,20 +83,22 @@ class ProjectChatTest extends TestCase
             'channel' => 'dashboard',
         ]);
 
-        $session->messages()->create([
-            'tenant_id' => $project->tenant_id,
-            'project_id' => $project->id,
-            'user_id' => $user->id,
-            'role' => 'user',
-            'content' => 'What is this about?',
-        ]);
+        $userHistoryMessage = new ChatMessage();
+        $userHistoryMessage->tenant_id = $project->tenant_id;
+        $userHistoryMessage->project_id = $project->id;
+        $userHistoryMessage->chat_session_id = $session->id;
+        $userHistoryMessage->user_id = $user->id;
+        $userHistoryMessage->role = 'user';
+        $userHistoryMessage->content = 'What is this about?';
+        $userHistoryMessage->save();
 
-        $session->messages()->create([
-            'tenant_id' => $project->tenant_id,
-            'project_id' => $project->id,
-            'role' => 'assistant',
-            'content' => 'This is a test response.',
-        ]);
+        $assistantHistoryMessage = new ChatMessage();
+        $assistantHistoryMessage->tenant_id = $project->tenant_id;
+        $assistantHistoryMessage->project_id = $project->id;
+        $assistantHistoryMessage->chat_session_id = $session->id;
+        $assistantHistoryMessage->role = 'assistant';
+        $assistantHistoryMessage->content = 'This is a test response.';
+        $assistantHistoryMessage->save();
 
         $response = $this->actingAs($user)
             ->getJson("/api/projects/{$project->id}/chats/{$session->id}/history");
@@ -155,6 +164,103 @@ class ProjectChatTest extends TestCase
             'role' => 'user',
             'content' => 'Hello, what is in the documents?',
         ]);
+    }
+
+    public function test_send_message_dispatches_realtime_broadcast_event(): void
+    {
+        Event::fake([ProjectChatMessageCreated::class]);
+
+        [$user, $project] = $this->createProjectContext();
+
+        $session = ChatSession::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'user_id' => $user->id,
+            'title' => 'Realtime Chat',
+            'channel' => 'dashboard',
+        ]);
+
+        $document = ProjectDocument::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'uploaded_by' => $user->id,
+            'original_name' => 'guide.pdf',
+            'storage_path' => 'rag/documents/guide.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 128,
+            'status' => 'indexed',
+        ]);
+
+        $chunk = DocumentChunk::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'project_document_id' => $document->id,
+            'chunk_index' => 0,
+            'page_from' => 2,
+            'page_to' => 3,
+            'content' => 'The platform supports realtime warehouse updates and audit trails.',
+        ]);
+
+        $embeddingService = Mockery::mock(OllamaEmbeddingService::class);
+        $embeddingService->shouldReceive('embed')
+            ->once()
+            ->with('Do we support realtime updates?')
+            ->andReturn([0.15, 0.42, 0.73]);
+
+        $retrievalService = Mockery::mock(ContextRetrievalService::class);
+        $retrievalService->shouldReceive('retrieve')
+            ->once()
+            ->withArgs(fn (Project $resolvedProject, array $embedding): bool => $resolvedProject->is($project) && $embedding === [0.15, 0.42, 0.73])
+            ->andReturn([
+                [
+                    'chunk_id' => $chunk->id,
+                    'document_id' => $document->id,
+                    'document_name' => $document->original_name,
+                    'page_from' => 2,
+                    'page_to' => 3,
+                    'excerpt' => 'The platform supports realtime warehouse updates and audit trails.',
+                    'content' => 'The platform supports realtime warehouse updates and audit trails.',
+                    'score' => 0.98,
+                ],
+            ]);
+
+        $generationService = Mockery::mock(OllamaGenerationService::class);
+        $generationService->shouldReceive('generate')
+            ->once()
+            ->andReturn('Draft answer based on retrieved evidence.');
+        $generationService->shouldReceive('generate')
+            ->once()
+            ->andReturn('Yes. The platform supports realtime updates and audit trails according to the uploaded guide.');
+
+        $this->app->instance(OllamaEmbeddingService::class, $embeddingService);
+        $this->app->instance(ContextRetrievalService::class, $retrievalService);
+        $this->app->instance(OllamaGenerationService::class, $generationService);
+
+        $response = $this->actingAs($user)
+            ->postJson("/api/projects/{$project->id}/chats/message", [
+                'chat_session_id' => $session->id,
+                'message' => 'Do we support realtime updates?',
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.assistant_message.content', 'Yes. The platform supports realtime updates and audit trails according to the uploaded guide.')
+            ->assertJsonPath('data.citations.0.document_name', 'guide.pdf')
+            ->assertJsonPath('data.citations.0.chunk_id', $chunk->id);
+
+        $assistantMessageId = (int) $response->json('data.assistant_message.id');
+
+        $this->assertDatabaseHas('message_citations', [
+            'chat_message_id' => $assistantMessageId,
+            'document_chunk_id' => $chunk->id,
+        ]);
+
+        Event::assertDispatched(ProjectChatMessageCreated::class, function (ProjectChatMessageCreated $event) use ($project, $session, $assistantMessageId, $chunk): bool {
+            return $event->projectId === $project->id
+                && $event->chatSessionId === $session->id
+                && ($event->payload['assistant_message']['id'] ?? null) === $assistantMessageId
+                && ($event->payload['citations'][0]['chunk_id'] ?? null) === $chunk->id
+                && ($event->payload['citations'][0]['document_name'] ?? null) === 'guide.pdf';
+        });
     }
 
     public function test_send_message_requires_session_id_and_message(): void

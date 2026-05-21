@@ -1,7 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { RealtimeChatEventPayload, ReverbService } from '../core/reverb.service';
 import { ChatMessage, ChatSession, RagApiService } from '../core/rag-api.service';
 
 @Component({
@@ -34,10 +35,20 @@ import { ChatMessage, ChatSession, RagApiService } from '../core/rag-api.service
 
       <section class="flex min-h-[560px] flex-col rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
         <div class="mb-4 border-b border-[var(--app-border)] pb-3">
-          <h3 class="text-lg font-semibold text-[var(--app-text)]">Conversation</h3>
-          @if (activeChat()) {
-            <p class="text-sm text-[var(--app-text-muted)]">{{ activeChat()?.title || ('Chat #' + activeChat()?.id) }}</p>
-          }
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h3 class="text-lg font-semibold text-[var(--app-text)]">Conversation</h3>
+              @if (activeChat()) {
+                <p class="text-sm text-[var(--app-text-muted)]">{{ activeChat()?.title || ('Chat #' + activeChat()?.id) }}</p>
+              }
+            </div>
+
+            <div class="flex items-center gap-2 text-xs">
+              <span [class]="isRealtimeConnected() ? 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-medium text-emerald-600' : 'rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] px-2 py-1 font-medium text-[var(--app-text-muted)]'">
+                {{ isRealtimeConnected() ? 'Live updates on' : 'Live updates off' }}
+              </span>
+            </div>
+          </div>
         </div>
 
         <div class="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
@@ -78,23 +89,32 @@ import { ChatMessage, ChatSession, RagApiService } from '../core/rag-api.service
     </section>
   `,
 })
-export class ProjectChatPageComponent implements OnInit {
+export class ProjectChatPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(RagApiService);
+  private readonly reverb = inject(ReverbService);
 
   protected readonly chats = signal<ChatSession[]>([]);
   protected readonly chatMessages = signal<ChatMessage[]>([]);
   protected readonly selectedChatId = signal<number | null>(null);
   protected readonly isCreatingChat = signal(false);
   protected readonly isSending = signal(false);
+  protected readonly isRealtimeConnected = signal(false);
   protected readonly chatError = signal('');
   protected chatTitle = '';
   protected messageDraft = '';
 
   protected readonly activeChat = computed(() => this.chats().find((chat) => chat.id === this.selectedChatId()) ?? null);
 
+  private realtimeSubscription: { leave: () => void } | null = null;
+  private realtimeToken = 0;
+
   ngOnInit(): void {
     this.loadChats();
+  }
+
+  ngOnDestroy(): void {
+    this.leaveRealtime();
   }
 
   protected loadChats(): void {
@@ -133,6 +153,8 @@ export class ProjectChatPageComponent implements OnInit {
       next: ({ data }) => this.chatMessages.set(data),
       error: () => this.chatError.set('Unable to load chat history.'),
     });
+
+    void this.bindRealtime(chat);
   }
 
   protected sendMessage(): void {
@@ -164,6 +186,75 @@ export class ProjectChatPageComponent implements OnInit {
       },
       complete: () => this.isSending.set(false),
     });
+  }
+
+  private async bindRealtime(chat: ChatSession): Promise<void> {
+    const token = ++this.realtimeToken;
+
+    this.leaveRealtime();
+    this.isRealtimeConnected.set(false);
+
+    const subscription = await this.reverb.subscribeToProjectChat(this.requireProjectId(), chat.id, {
+      onConnected: () => {
+        if (token === this.realtimeToken) {
+          this.isRealtimeConnected.set(true);
+        }
+      },
+      onMessage: (payload: RealtimeChatEventPayload) => {
+        if (token !== this.realtimeToken) {
+          return;
+        }
+
+        this.mergeRealtimePayload(payload);
+      },
+      onError: (message: string) => {
+        if (token === this.realtimeToken) {
+          this.chatError.set(message);
+        }
+      },
+    });
+
+    if (token !== this.realtimeToken) {
+      subscription?.leave();
+      return;
+    }
+
+    this.realtimeSubscription = subscription;
+  }
+
+  private mergeRealtimePayload(payload: RealtimeChatEventPayload): void {
+    const messages = [payload.user_message, payload.assistant_message, payload.message, payload.data]
+      .filter((message): message is ChatMessage => !!message)
+      .map((message) => ({
+        ...message,
+        citations: message.citations ?? payload.citations,
+      }));
+
+    if (messages.length === 0) {
+      return;
+    }
+
+    this.chatMessages.update((existing) => {
+      const next = [...existing];
+
+      for (const message of messages) {
+        const matchIndex = next.findIndex((item) => item.id === message.id);
+
+        if (matchIndex >= 0) {
+          next[matchIndex] = message;
+        } else {
+          next.push(message);
+        }
+      }
+
+      return next;
+    });
+  }
+
+  private leaveRealtime(): void {
+    this.realtimeSubscription?.leave();
+    this.realtimeSubscription = null;
+    this.isRealtimeConnected.set(false);
   }
 
   private requireProjectId(): number {

@@ -2,6 +2,7 @@
 
 namespace App\Services\Rag;
 
+use App\Events\ProjectChatMessageCreated;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\MessageCitation;
@@ -60,9 +61,10 @@ class ChatAnswerService
             "Answer to normalize:\n{$draft}"
         );
 
-        $assistantMessage = $chatSession->messages()->create([
+        $assistantMessage = ChatMessage::query()->forceCreate([
             'tenant_id' => $project->tenant_id,
             'project_id' => $project->id,
+            'chat_session_id' => $chatSession->id,
             'role' => 'assistant',
             'content' => $normalized,
             'model' => config('rag.ollama.generation_model'),
@@ -73,7 +75,7 @@ class ChatAnswerService
         ]);
 
         $citations = collect($contexts)->take(4)->map(function (array $item) use ($assistantMessage): array {
-            MessageCitation::query()->create([
+            MessageCitation::query()->forceCreate([
                 'chat_message_id' => $assistantMessage->id,
                 'document_chunk_id' => $item['chunk_id'],
                 'score' => $item['score'],
@@ -94,6 +96,19 @@ class ChatAnswerService
                 'score' => $item['score'],
             ];
         })->all();
+
+        $assistantMessage->load('citations');
+
+        event(new ProjectChatMessageCreated(
+            projectId: $project->id,
+            chatSessionId: $chatSession->id,
+            payload: [
+                'project_id' => $project->id,
+                'chat_session_id' => $chatSession->id,
+                'assistant_message' => $assistantMessage->toArray(),
+                'citations' => $citations,
+            ],
+        ));
 
         return [
             'message' => $assistantMessage,
