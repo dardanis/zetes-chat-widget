@@ -397,33 +397,45 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  protected send(): void {
-    const text = this.draft.trim();
-    if (!text || !this.api.hasSession || this.isSending()) {
-      return;
-    }
+   protected send(): void {
+     const text = this.draft.trim();
+     if (!text || !this.api.hasSession || this.isSending()) {
+       return;
+     }
 
-    this.isSending.set(true);
-    this.chatError.set('');
-    this.draft = '';
+     this.isSending.set(true);
+     this.chatError.set('');
 
-    this.api.sendMessage(text).subscribe({
-      next: (data) => {
-        this.messages.update((msgs) => [
-          ...msgs,
-          data.user_message,
-          { ...data.assistant_message, citations: data.citations },
-        ]);
-        this.scrollToBottom();
-      },
-      error: (err) => {
-        this.chatError.set(err?.error?.message ?? 'Failed to send message. Please try again.');
-        this.draft = text;
-        this.isSending.set(false);
-      },
-      complete: () => this.isSending.set(false),
-    });
-  }
+     // Optimistic update: show user message immediately with temporary negative ID
+     const optimisticUserMessage: ChatMessage = {
+       id: -Date.now(), // Temporary ID
+       role: 'user',
+       content: text,
+     };
+     this.messages.update((msgs) => [...msgs, optimisticUserMessage]);
+     this.draft = '';
+     this.scrollToBottom();
+
+     this.api.sendMessage(text).subscribe({
+       next: (data) => {
+         // Replace optimistic message with real API responses
+         this.messages.update((msgs) =>
+           msgs.filter((m) => m.id !== optimisticUserMessage.id)
+         );
+         this.messages.update((msgs) => [
+           ...msgs,
+           data.user_message,
+           { ...data.assistant_message, citations: data.citations },
+         ]);
+         this.scrollToBottom();
+       },
+       error: (err) => {
+         this.chatError.set(err?.error?.message ?? 'Failed to send message. Please try again.');
+         this.isSending.set(false);
+       },
+       complete: () => this.isSending.set(false),
+     });
+   }
 
   private createSession(): void {
     this.isCreatingSession.set(true);
