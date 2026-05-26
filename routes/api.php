@@ -1,7 +1,8 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\RegisteredUserController;
+// COMMENTED: registration disabled
+// use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ProjectChatController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectDocumentController;
@@ -11,7 +12,8 @@ use App\Http\Controllers\WidgetChatController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/register', RegisteredUserController::class);
+// COMMENTED: registration disabled
+// Route::post('/register', RegisteredUserController::class);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 Route::middleware(['widget.request', 'throttle:widget-chat-create'])
     ->post('/widget/{widgetKey}/chats', [WidgetChatController::class, 'createSession']);
@@ -36,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::get('/projects/{project}/documents', [ProjectDocumentController::class, 'index']);
     Route::post('/projects/{project}/documents', [ProjectDocumentController::class, 'store']);
+    Route::delete('/projects/{project}/documents/{document}', [ProjectDocumentController::class, 'destroy']);
 
     Route::get('/projects/{project}/chats', [ProjectChatController::class, 'index']);
     Route::post('/projects/{project}/chats', [ProjectChatController::class, 'createSession']);

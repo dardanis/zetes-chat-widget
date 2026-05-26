@@ -1,5 +1,6 @@
 <?php
-
+/*
+// COMMENTED: registration disabled
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -32,4 +33,5 @@ class RegisteredUserController extends Controller
         ], 201);
     }
 }
+*/
 

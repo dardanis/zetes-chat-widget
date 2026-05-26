@@ -19,10 +19,17 @@ import { ProjectDocument, RagApiService } from '../core/rag-api.service';
           </div>
         }
 
+        @if (deleteError()) {
+          <div class="mt-3 flex items-start gap-2 rounded-lg border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 px-3 py-2 text-sm text-[var(--app-danger)]">
+            <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+            <span>{{ deleteError() }}</span>
+          </div>
+        }
+
         <div
           class="relative mt-4 rounded-lg border-2 border-[var(--app-border)] border-dashed p-8 text-center transition"
           [class.border-cyan-400]="isDragging()"
-          [class.bg-cyan-400/5]="isDragging()"
+          [class.bg-cyan-50]="isDragging()"
           (dragover)="onDragOver($event)"
           (dragleave)="isDragging.set(false)"
           (drop)="onDrop($event)"
@@ -70,35 +77,46 @@ import { ProjectDocument, RagApiService } from '../core/rag-api.service';
                   }
                 </div>
 
-                @switch (document.status) {
-                  @case ('completed') {
-                    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-medium text-emerald-500">
-                      <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                      Indexed
-                    </span>
+                <div class="flex shrink-0 items-center gap-2">
+                  @switch (document.status) {
+                    @case ('completed') {
+                      <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-medium text-emerald-500">
+                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        Indexed
+                      </span>
+                    }
+                    @case ('processing') {
+                      <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-medium text-amber-500">
+                        <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500"></span>
+                        Processing
+                      </span>
+                    }
+                    @case ('pending') {
+                      <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--app-accent-soft)] px-2.5 py-1 text-xs font-medium text-[var(--app-accent)]">
+                        <span class="h-1.5 w-1.5 rounded-full bg-[var(--app-accent)]"></span>
+                        Queued
+                      </span>
+                    }
+                    @case ('failed') {
+                      <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--app-danger)]/10 px-2.5 py-1 text-xs font-medium text-[var(--app-danger)]">
+                        <span class="h-1.5 w-1.5 rounded-full bg-[var(--app-danger)]"></span>
+                        Failed
+                      </span>
+                    }
+                    @default {
+                      <span class="inline-flex shrink-0 items-center rounded-full bg-[var(--app-surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--app-text-muted)]">{{ document.status }}</span>
+                    }
                   }
-                  @case ('processing') {
-                    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-medium text-amber-500">
-                      <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500"></span>
-                      Processing
-                    </span>
-                  }
-                  @case ('pending') {
-                    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--app-accent-soft)] px-2.5 py-1 text-xs font-medium text-[var(--app-accent)]">
-                      <span class="h-1.5 w-1.5 rounded-full bg-[var(--app-accent)]"></span>
-                      Queued
-                    </span>
-                  }
-                  @case ('failed') {
-                    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--app-danger)]/10 px-2.5 py-1 text-xs font-medium text-[var(--app-danger)]">
-                      <span class="h-1.5 w-1.5 rounded-full bg-[var(--app-danger)]"></span>
-                      Failed
-                    </span>
-                  }
-                  @default {
-                    <span class="inline-flex shrink-0 items-center rounded-full bg-[var(--app-surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--app-text-muted)]">{{ document.status }}</span>
-                  }
-                }
+
+                  <button
+                    type="button"
+                    (click)="openDeleteModal(document)"
+                    [disabled]="isDeletingDocument(document.id)"
+                    class="rounded-md border border-[var(--app-border)] px-2.5 py-1 text-xs font-medium text-[var(--app-text-muted)] transition hover:border-[var(--app-danger)]/40 hover:bg-[var(--app-danger)]/10 hover:text-[var(--app-danger)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {{ isDeletingDocument(document.id) ? 'Deleting...' : 'Delete' }}
+                  </button>
+                </div>
               </div>
             } @empty {
               <div class="py-12 text-center">
@@ -110,6 +128,38 @@ import { ProjectDocument, RagApiService } from '../core/rag-api.service';
           </div>
         }
       </div>
+
+      @if (pendingDeleteDocument()) {
+        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4" (click)="closeDeleteModal()">
+          <div class="w-full max-w-md rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 shadow-xl" (click)="$event.stopPropagation()">
+            <h4 class="text-base font-semibold text-[var(--app-text)]">Delete document?</h4>
+            <p class="mt-2 text-sm text-[var(--app-text-muted)]">
+              This will permanently delete
+              <span class="font-medium text-[var(--app-text)]">{{ pendingDeleteDocument()!.original_name }}</span>
+              and its indexed chunks/citations.
+            </p>
+
+            <div class="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                (click)="closeDeleteModal()"
+                [disabled]="isDeletingDocument(pendingDeleteDocument()!.id)"
+                class="rounded-md border border-[var(--app-border)] px-3 py-1.5 text-sm text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                (click)="confirmDeleteDocument()"
+                [disabled]="isDeletingDocument(pendingDeleteDocument()!.id)"
+                class="rounded-md bg-[var(--app-danger)] px-3 py-1.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+              >
+                {{ isDeletingDocument(pendingDeleteDocument()!.id) ? 'Deleting...' : 'Delete document' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </section>
   `,
 })
@@ -123,6 +173,9 @@ export class ProjectDocumentsPageComponent implements OnInit {
   protected readonly isLoadingDocs = signal(true);
   protected readonly isDragging = signal(false);
   protected readonly uploadError = signal('');
+  protected readonly deleteError = signal('');
+  protected readonly deletingDocumentIds = signal<Set<number>>(new Set());
+  protected readonly pendingDeleteDocument = signal<ProjectDocument | null>(null);
 
   ngOnInit(): void {
     this.loadDocuments();
@@ -155,6 +208,7 @@ export class ProjectDocumentsPageComponent implements OnInit {
 
     this.isUploading.set(true);
     this.uploadError.set('');
+    this.deleteError.set('');
 
     this.api.uploadDocument(this.requireProjectId(), file).subscribe({
       next: ({ data }) => {
@@ -171,6 +225,7 @@ export class ProjectDocumentsPageComponent implements OnInit {
 
   protected loadDocuments(): void {
     this.isLoadingDocs.set(true);
+    this.deleteError.set('');
 
     this.api.listDocuments(this.requireProjectId()).subscribe({
       next: ({ data }) => this.documents.set(data),
@@ -179,6 +234,51 @@ export class ProjectDocumentsPageComponent implements OnInit {
         this.isLoadingDocs.set(false);
       },
       complete: () => this.isLoadingDocs.set(false),
+    });
+  }
+
+  protected isDeletingDocument(documentId: number): boolean {
+    return this.deletingDocumentIds().has(documentId);
+  }
+
+  protected openDeleteModal(document: ProjectDocument): void {
+    this.pendingDeleteDocument.set(document);
+  }
+
+  protected closeDeleteModal(): void {
+    this.pendingDeleteDocument.set(null);
+  }
+
+  protected confirmDeleteDocument(): void {
+    const document = this.pendingDeleteDocument();
+    if (!document) {
+      return;
+    }
+
+    this.deleteError.set('');
+    this.deletingDocumentIds.update((ids) => {
+      const next = new Set(ids);
+      next.add(document.id);
+
+      return next;
+    });
+
+    this.api.deleteDocument(this.requireProjectId(), document.id).subscribe({
+      next: () => {
+        this.documents.update((documents) => documents.filter((current) => current.id !== document.id));
+        this.pendingDeleteDocument.set(null);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.deleteError.set(error.error?.message ?? 'Failed to delete document.');
+      },
+      complete: () => {
+        this.deletingDocumentIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(document.id);
+
+          return next;
+        });
+      },
     });
   }
 

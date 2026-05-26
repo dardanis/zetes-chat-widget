@@ -152,6 +152,12 @@ export class RagApiService {
     );
   }
 
+  deleteDocument(projectId: number, documentId: number): Observable<void> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.delete<void>(`/api/projects/${projectId}/documents/${documentId}`))
+    );
+  }
+
   listChats(projectId: number): Observable<ApiListResponse<ChatSession>> {
     return this.http.get<ApiListResponse<ChatSession>>(`/api/projects/${projectId}/chats`);
   }

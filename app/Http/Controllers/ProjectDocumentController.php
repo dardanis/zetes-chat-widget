@@ -109,5 +109,24 @@ class ProjectDocumentController extends Controller
 
         return response()->json(['data' => $document], 202);
     }
+
+    public function destroy(Request $request, int $project, int $document): JsonResponse
+    {
+        $resolvedProject = $this->accessService->resolveProjectForUser($request->user(), $project);
+
+        $projectDocument = ProjectDocument::query()
+            ->where('tenant_id', $resolvedProject->tenant_id)
+            ->where('project_id', $resolvedProject->id)
+            ->whereKey($document)
+            ->firstOrFail();
+
+        if (is_string($projectDocument->storage_path) && $projectDocument->storage_path !== '') {
+            Storage::disk('local')->delete($projectDocument->storage_path);
+        }
+
+        $projectDocument->delete();
+
+        return response()->json([], 204);
+    }
 }
 

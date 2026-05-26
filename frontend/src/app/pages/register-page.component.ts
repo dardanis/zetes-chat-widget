@@ -1,3 +1,5 @@
+// COMMENTED: registration disabled
+/*
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -93,4 +95,5 @@ export class RegisterPageComponent {
     });
   }
 }
+*/
 

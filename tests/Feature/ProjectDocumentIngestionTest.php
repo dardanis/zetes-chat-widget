@@ -150,6 +150,83 @@ class ProjectDocumentIngestionTest extends TestCase
         $this->assertSame([0.11, 0.22, 0.33], $chunk->embedding);
     }
 
+    public function test_user_can_delete_a_project_document(): void
+    {
+        Storage::fake('local');
+
+        [$user, $project] = $this->createProjectContext();
+
+        Storage::disk('local')->put('rag/documents/delete-me.pdf', 'fake-pdf-content');
+
+        $document = ProjectDocument::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'uploaded_by' => $user->id,
+            'original_name' => 'delete-me.pdf',
+            'storage_path' => 'rag/documents/delete-me.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 128,
+            'status' => 'indexed',
+        ]);
+
+        $chunk = DocumentChunk::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'project_document_id' => $document->id,
+            'chunk_index' => 0,
+            'content' => 'Chunk to be removed with the document.',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->deleteJson('/api/projects/'.$project->id.'/documents/'.$document->id);
+
+        $response->assertNoContent();
+
+        $this->assertDatabaseMissing('project_documents', [
+            'id' => $document->id,
+        ]);
+
+        $this->assertDatabaseMissing('document_chunks', [
+            'id' => $chunk->id,
+        ]);
+
+        Storage::disk('local')->assertMissing('rag/documents/delete-me.pdf');
+    }
+
+    public function test_user_cannot_delete_document_from_foreign_project(): void
+    {
+        Storage::fake('local');
+
+        [$owner, $project] = $this->createProjectContext();
+
+        $intruder = User::factory()->create();
+        $otherTenant = Tenant::query()->create(['name' => 'Tenant Beta']);
+        $otherTenant->users()->attach($intruder->id, ['role' => 'owner']);
+
+        Storage::disk('local')->put('rag/documents/protected.pdf', 'fake-pdf-content');
+
+        $document = ProjectDocument::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'uploaded_by' => $owner->id,
+            'original_name' => 'protected.pdf',
+            'storage_path' => 'rag/documents/protected.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 128,
+            'status' => 'indexed',
+        ]);
+
+        $this->actingAs($intruder)
+            ->deleteJson('/api/projects/'.$project->id.'/documents/'.$document->id)
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('project_documents', [
+            'id' => $document->id,
+        ]);
+
+        Storage::disk('local')->assertExists('rag/documents/protected.pdf');
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();

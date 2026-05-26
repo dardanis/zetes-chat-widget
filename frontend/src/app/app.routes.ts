@@ -8,14 +8,16 @@ import { ProjectChatPageComponent } from './pages/project-chat-page.component';
 import { ProjectDocumentsPageComponent } from './pages/project-documents-page.component';
 import { ProjectOverviewPageComponent } from './pages/project-overview-page.component';
 import { ProjectsPageComponent } from './pages/projects-page.component';
-import { RegisterPageComponent } from './pages/register-page.component';
+// COMMENTED: registration disabled
+// import { RegisterPageComponent } from './pages/register-page.component';
 import { SettingsPageComponent } from './pages/settings-page.component';
 import { TenantsPageComponent } from './pages/tenants-page.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'app/dashboard' },
   { path: 'login', component: LoginPageComponent, canActivate: [guestGuard] },
-  { path: 'register', component: RegisterPageComponent, canActivate: [guestGuard] },
+  // COMMENTED: registration disabled
+  // { path: 'register', component: RegisterPageComponent, canActivate: [guestGuard] },
 
   {
     path: 'app',

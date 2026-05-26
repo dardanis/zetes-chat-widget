@@ -70,6 +70,8 @@ export class AuthService {
     );
   }
 
+  // COMMENTED: registration disabled
+  /*
   register(payload: RegisterPayload): Observable<User> {
     return this.ensureCsrfCookie().pipe(
       switchMap(() => this.http.post<AuthResponse>('/api/register', payload)),
@@ -80,6 +82,7 @@ export class AuthService {
       })
     );
   }
+  */
 
   logout(): Observable<void> {
     return this.ensureCsrfCookie().pipe(
