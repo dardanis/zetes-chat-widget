@@ -1,9 +1,9 @@
 {
   "reverb": {
     "appKey": "local-reverb-key",
-    "host": "zetes-chat-widget.test",
-    "port": 8080,
-    "scheme": "http",
+    "host": "chat-agent.zetes.hamburg",
+    "port": 443,
+    "scheme": "https",
     "authEndpoint": "/broadcasting/auth"
   }
 }
