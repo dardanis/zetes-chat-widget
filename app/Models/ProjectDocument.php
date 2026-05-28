@@ -17,6 +17,8 @@ class ProjectDocument extends Model
         'mime_type',
         'file_size',
         'status',
+        'ingestion_type',
+        'source_url',
         'metadata',
         'processed_at',
     ];

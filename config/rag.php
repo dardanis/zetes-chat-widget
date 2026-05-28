@@ -13,6 +13,12 @@ return [
         'top_k' => (int) env('RAG_RETRIEVAL_TOP_K', 6),
     ],
 
+    'crawler' => [
+        'max_pages' => (int) env('RAG_CRAWLER_MAX_PAGES', 40),
+        'request_timeout_seconds' => (int) env('RAG_CRAWLER_REQUEST_TIMEOUT_SECONDS', 10),
+        'max_content_chars' => (int) env('RAG_CRAWLER_MAX_CONTENT_CHARS', 120000),
+    ],
+
     'widget' => [
         'allowed_origins' => array_filter(array_map('trim', explode(',', (string) env('RAG_WIDGET_ALLOWED_ORIGINS', 'http://localhost,http://127.0.0.1')))),
         'session_ttl_seconds' => (int) env('RAG_WIDGET_SESSION_TTL_SECONDS', 86400),

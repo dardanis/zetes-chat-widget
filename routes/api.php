@@ -39,6 +39,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/projects/{project}/documents', [ProjectDocumentController::class, 'index']);
     Route::post('/projects/{project}/documents', [ProjectDocumentController::class, 'store']);
     Route::delete('/projects/{project}/documents/{document}', [ProjectDocumentController::class, 'destroy']);
+    Route::post('/projects/{project}/crawl', [ProjectDocumentController::class, 'crawl']);
+    Route::get('/projects/{project}/crawled-urls', [ProjectDocumentController::class, 'crawledUrls']);
 
     Route::get('/projects/{project}/chats', [ProjectChatController::class, 'index']);
     Route::post('/projects/{project}/chats', [ProjectChatController::class, 'createSession']);

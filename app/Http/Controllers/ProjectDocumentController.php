@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\CrawlProjectWebsiteJob;
 use App\Jobs\ProcessProjectDocumentJob;
 use App\Models\ProjectDocument;
 use App\Services\Rag\ProjectAccessService;
@@ -103,11 +104,64 @@ class ProjectDocumentController extends Controller
             'mime_type' => $clientMimeType,
             'file_size' => $fileSize,
             'status' => 'pending',
+            'ingestion_type' => 'pdf',
         ]);
 
         ProcessProjectDocumentJob::dispatch($document->id);
 
         return response()->json(['data' => $document], 202);
+    }
+
+    public function crawl(Request $request, int $project): JsonResponse
+    {
+        $resolvedProject = $this->accessService->resolveProjectForUser($request->user(), $project);
+
+        $payload = $request->validate([
+            'url' => ['required', 'url:'.implode(',', ['http', 'https'])],
+            'max_pages' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $maxPages = (int) ($payload['max_pages'] ?? config('rag.crawler.max_pages', 40));
+
+        CrawlProjectWebsiteJob::dispatch(
+            projectId: $resolvedProject->id,
+            userId: $request->user()->id,
+            startUrl: (string) $payload['url'],
+            maxPages: $maxPages,
+        );
+
+        return response()->json([
+            'message' => 'Website crawl queued.',
+            'data' => [
+                'url' => (string) $payload['url'],
+                'max_pages' => $maxPages,
+            ],
+        ], 202);
+    }
+
+    public function crawledUrls(Request $request, int $project): JsonResponse
+    {
+        $resolvedProject = $this->accessService->resolveProjectForUser($request->user(), $project);
+
+        $crawledUrls = ProjectDocument::query()
+            ->where('tenant_id', $resolvedProject->tenant_id)
+            ->where('project_id', $resolvedProject->id)
+            ->where('ingestion_type', 'web')
+            ->whereNotNull('source_url')
+            ->latest('id')
+            ->get()
+            ->map(fn (ProjectDocument $document): array => [
+                'id' => $document->id,
+                'url' => $document->source_url,
+                'title' => data_get($document->metadata, 'title', $document->original_name),
+                'status' => $document->status,
+                'chunks_count' => (int) data_get($document->metadata, 'chunks_count', 0),
+                'processed_at' => $document->processed_at?->toIso8601String(),
+                'updated_at' => $document->updated_at?->toIso8601String(),
+            ])
+            ->values();
+
+        return response()->json(['data' => $crawledUrls]);
     }
 
     public function destroy(Request $request, int $project, int $document): JsonResponse

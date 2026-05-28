@@ -1,11 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { ProjectDocument, RagApiService } from '../core/rag-api.service';
+import { CrawledUrl, ProjectDocument, RagApiService } from '../core/rag-api.service';
 
 @Component({
   selector: 'app-project-documents-page',
   standalone: true,
+  imports: [FormsModule],
   template: `
     <section class="space-y-6">
       <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
@@ -50,6 +52,55 @@ import { ProjectDocument, RagApiService } from '../core/rag-api.service';
             {{ isUploading() ? 'Uploading...' : 'Upload PDF' }}
           </button>
         }
+      </div>
+
+      <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
+        <h3 class="text-sm font-semibold text-[var(--app-text)]">Website crawler</h3>
+        <p class="mt-1 text-xs text-[var(--app-text-muted)]">Paste a URL to crawl and index same-domain pages automatically for this project.</p>
+
+        @if (crawlError()) {
+          <div class="mt-3 flex items-start gap-2 rounded-lg border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 px-3 py-2 text-sm text-[var(--app-danger)]">
+            <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+            <span>{{ crawlError() }}</span>
+          </div>
+        }
+
+        <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+          <input
+            type="url"
+            [(ngModel)]="crawlUrl"
+            placeholder="https://example.com"
+            class="min-w-0 flex-1 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
+          />
+          <button
+            type="button"
+            (click)="startWebsiteCrawl()"
+            [disabled]="isCrawling() || !crawlUrl.trim()"
+            class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+          >
+            {{ isCrawling() ? 'Queueing...' : 'Crawl website' }}
+          </button>
+        </div>
+
+        <div class="mt-4">
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Crawled URLs</p>
+            <button type="button" (click)="loadCrawledUrls()" class="rounded-md px-2 py-1 text-xs text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)]">Refresh</button>
+          </div>
+
+          @if (crawledUrls().length === 0) {
+            <p class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-xs text-[var(--app-text-muted)]">No URLs crawled yet.</p>
+          } @else {
+            <div class="space-y-2">
+              @for (item of crawledUrls(); track item.id) {
+                <div class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2">
+                  <p class="truncate text-xs font-medium text-[var(--app-text)]">{{ item.url }}</p>
+                  <p class="mt-1 text-xs text-[var(--app-text-muted)]">{{ item.title || 'Untitled page' }} - {{ item.status }} - {{ item.chunks_count ?? 0 }} chunks</p>
+                </div>
+              }
+            </div>
+          }
+        </div>
       </div>
 
       <div>
@@ -176,9 +227,14 @@ export class ProjectDocumentsPageComponent implements OnInit {
   protected readonly deleteError = signal('');
   protected readonly deletingDocumentIds = signal<Set<number>>(new Set());
   protected readonly pendingDeleteDocument = signal<ProjectDocument | null>(null);
+  protected readonly crawledUrls = signal<CrawledUrl[]>([]);
+  protected readonly isCrawling = signal(false);
+  protected readonly crawlError = signal('');
+  protected crawlUrl = '';
 
   ngOnInit(): void {
     this.loadDocuments();
+    this.loadCrawledUrls();
   }
 
   protected onFileSelected(event: Event): void {
@@ -234,6 +290,35 @@ export class ProjectDocumentsPageComponent implements OnInit {
         this.isLoadingDocs.set(false);
       },
       complete: () => this.isLoadingDocs.set(false),
+    });
+  }
+
+  protected loadCrawledUrls(): void {
+    this.api.listCrawledUrls(this.requireProjectId()).subscribe({
+      next: ({ data }) => this.crawledUrls.set(data),
+      error: () => this.crawlError.set('Failed to load crawled URLs.'),
+    });
+  }
+
+  protected startWebsiteCrawl(): void {
+    const url = this.crawlUrl.trim();
+
+    if (!url) {
+      return;
+    }
+
+    this.isCrawling.set(true);
+    this.crawlError.set('');
+
+    this.api.crawlWebsite(this.requireProjectId(), { url }).subscribe({
+      next: () => {
+        this.loadCrawledUrls();
+        this.loadDocuments();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.crawlError.set(error.error?.message ?? 'Unable to start website crawl.');
+      },
+      complete: () => this.isCrawling.set(false),
     });
   }
 

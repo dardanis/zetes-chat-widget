@@ -39,9 +39,21 @@ export interface ProjectDocument {
   project_id: number;
   original_name: string;
   status: string;
+  ingestion_type?: 'pdf' | 'web' | string;
+  source_url?: string | null;
   metadata?: { pages_count?: number; chunks_count?: number } | null;
   processed_at?: string | null;
   created_at?: string;
+}
+
+export interface CrawledUrl {
+  id: number;
+  url: string;
+  title?: string | null;
+  status: string;
+  chunks_count?: number;
+  processed_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface ChatSession {
@@ -156,6 +168,16 @@ export class RagApiService {
     return this.auth.refreshCsrf().pipe(
       switchMap(() => this.http.delete<void>(`/api/projects/${projectId}/documents/${documentId}`))
     );
+  }
+
+  crawlWebsite(projectId: number, payload: { url: string; max_pages?: number }): Observable<{ message: string; data: { url: string; max_pages: number } }> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.post<{ message: string; data: { url: string; max_pages: number } }>(`/api/projects/${projectId}/crawl`, payload))
+    );
+  }
+
+  listCrawledUrls(projectId: number): Observable<ApiListResponse<CrawledUrl>> {
+    return this.http.get<ApiListResponse<CrawledUrl>>(`/api/projects/${projectId}/crawled-urls`);
   }
 
   listChats(projectId: number): Observable<ApiListResponse<ChatSession>> {

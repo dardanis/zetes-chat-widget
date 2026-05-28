@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\CrawlProjectWebsiteJob;
 use App\Jobs\EmbedDocumentChunkJob;
 use App\Jobs\ProcessProjectDocumentJob;
 use App\Models\DocumentChunk;
@@ -12,6 +13,7 @@ use App\Models\User;
 use App\Services\Rag\DocumentChunkingService;
 use App\Services\Rag\OllamaEmbeddingService;
 use App\Services\Rag\PdfTextExtractorService;
+use App\Services\Rag\WebsiteCrawlerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -225,6 +227,119 @@ class ProjectDocumentIngestionTest extends TestCase
         ]);
 
         Storage::disk('local')->assertExists('rag/documents/protected.pdf');
+    }
+
+    public function test_starting_website_crawl_queues_job(): void
+    {
+        Queue::fake();
+
+        [$user, $project] = $this->createProjectContext();
+
+        $response = $this->actingAs($user)->postJson('/api/projects/'.$project->id.'/crawl', [
+            'url' => 'https://example.com',
+            'max_pages' => 10,
+        ]);
+
+        $response->assertAccepted();
+
+        Queue::assertPushed(CrawlProjectWebsiteJob::class, function (CrawlProjectWebsiteJob $job) use ($project, $user): bool {
+            return $job->projectId === $project->id
+                && $job->userId === $user->id
+                && $job->startUrl === 'https://example.com'
+                && $job->maxPages === 10;
+        });
+    }
+
+    public function test_crawl_job_indexes_crawled_pages_as_project_documents(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        [$user, $project] = $this->createProjectContext();
+
+        $crawlerService = Mockery::mock(WebsiteCrawlerService::class);
+        $crawlerService->shouldReceive('crawlSite')->once()->andReturn([
+            [
+                'url' => 'https://example.com',
+                'title' => 'Home',
+                'content' => 'Welcome to the example documentation site.',
+            ],
+            [
+                'url' => 'https://example.com/docs',
+                'title' => 'Docs',
+                'content' => 'Install the product and configure the environment.',
+            ],
+        ]);
+
+        $chunker = Mockery::mock(DocumentChunkingService::class);
+        $chunker->shouldReceive('chunk')->twice()->andReturn([
+            [
+                'chunk_index' => 0,
+                'content' => 'Crawled page chunk',
+                'page_from' => 1,
+                'page_to' => 1,
+                'metadata' => ['strategy' => 'test'],
+            ],
+        ]);
+
+        (new CrawlProjectWebsiteJob($project->id, $user->id, 'https://example.com', 10))
+            ->handle($crawlerService, $chunker);
+
+        $this->assertDatabaseHas('project_documents', [
+            'project_id' => $project->id,
+            'ingestion_type' => 'web',
+            'source_url' => 'https://example.com',
+            'status' => 'indexed',
+        ]);
+
+        $this->assertDatabaseHas('project_documents', [
+            'project_id' => $project->id,
+            'ingestion_type' => 'web',
+            'source_url' => 'https://example.com/docs',
+            'status' => 'indexed',
+        ]);
+
+        Queue::assertPushed(EmbedDocumentChunkJob::class, 2);
+    }
+
+    public function test_user_can_list_crawled_urls_for_project(): void
+    {
+        [$user, $project] = $this->createProjectContext();
+
+        ProjectDocument::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'uploaded_by' => $user->id,
+            'original_name' => 'handbook.pdf',
+            'storage_path' => 'rag/documents/handbook.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 128,
+            'status' => 'indexed',
+            'ingestion_type' => 'pdf',
+        ]);
+
+        ProjectDocument::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'uploaded_by' => $user->id,
+            'original_name' => 'Example docs',
+            'storage_path' => 'rag/crawled/example.txt',
+            'mime_type' => 'text/html',
+            'file_size' => 64,
+            'status' => 'indexed',
+            'ingestion_type' => 'web',
+            'source_url' => 'https://example.com/docs',
+            'metadata' => ['chunks_count' => 3, 'title' => 'Example docs'],
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/projects/'.$project->id.'/crawled-urls');
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.url', 'https://example.com/docs');
+        $response->assertJsonPath('data.0.status', 'indexed');
+        $response->assertJsonPath('data.0.chunks_count', 3);
     }
 
     protected function tearDown(): void
