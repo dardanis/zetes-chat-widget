@@ -223,6 +223,10 @@ export class RagApiService {
     );
   }
 
+  listConfluenceConnections(tenantId: number): Observable<ApiListResponse<AtlassianConnection>> {
+    return this.http.get<ApiListResponse<AtlassianConnection>>(`/api/tenants/${tenantId}/confluence/connections`);
+  }
+
   listConfluenceSpaces(tenantId: number, connectionId: number): Observable<ApiListResponse<ConfluenceSpace>> {
     return this.http.get<ApiListResponse<ConfluenceSpace>>(`/api/tenants/${tenantId}/confluence/connections/${connectionId}/spaces`);
   }

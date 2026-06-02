@@ -49,4 +49,3 @@ return new class extends Migration
         Schema::dropIfExists('atlassian_connections');
     }
 };
-

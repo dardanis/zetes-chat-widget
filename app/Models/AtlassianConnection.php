@@ -45,4 +45,3 @@ class AtlassianConnection extends Model
         return $this->hasMany(ProjectConfluenceSpace::class);
     }
 }
-

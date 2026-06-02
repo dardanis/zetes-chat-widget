@@ -160,4 +160,3 @@ class SyncProjectConfluenceSpaceJob implements ShouldQueue
             ]);
     }
 }
-

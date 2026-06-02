@@ -48,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/projects/{project}/chats/message', [ProjectChatController::class, 'sendMessage']);
     Route::get('/projects/{project}/chats/{chat}/history', [ProjectChatController::class, 'history']);
 
+    Route::get('/tenants/{tenant}/confluence/connections', [ConfluenceIntegrationController::class, 'indexConnections']);
     Route::post('/tenants/{tenant}/confluence/connections', [ConfluenceIntegrationController::class, 'storeConnection']);
     Route::get('/tenants/{tenant}/confluence/connections/{connection}/spaces', [ConfluenceIntegrationController::class, 'listSpaces']);
 

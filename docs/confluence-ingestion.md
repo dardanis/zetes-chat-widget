@@ -4,13 +4,15 @@ This app now supports selecting Confluence spaces per local project and syncing 
 
 ## API Flow
 
-1. Create tenant connection:
+1. List tenant connections (for reusing existing credentials):
+   - `GET /api/tenants/{tenant}/confluence/connections`
+2. Create tenant connection:
    - `POST /api/tenants/{tenant}/confluence/connections`
-2. List accessible spaces:
+3. List accessible spaces:
    - `GET /api/tenants/{tenant}/confluence/connections/{connection}/spaces`
-3. Save selected spaces for a project:
+4. Save selected spaces for a project:
    - `PUT /api/projects/{project}/confluence/spaces`
-4. Queue sync jobs:
+5. Queue sync jobs:
    - `POST /api/projects/{project}/confluence/sync`
 
 ## Required payloads
@@ -41,4 +43,3 @@ This app now supports selecting Confluence spaces per local project and syncing 
 - Sync runs through queued jobs on the `rag` queue by default.
 - Documents are stored with `ingestion_type = confluence`.
 - Each sync is tenant/project scoped to preserve isolation.
-

@@ -158,4 +158,3 @@ class ConfluenceApiService
         return rtrim($baseUrl, '/').'/'.ltrim($path, '/');
     }
 }
-

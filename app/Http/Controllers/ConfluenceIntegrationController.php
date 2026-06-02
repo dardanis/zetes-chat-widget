@@ -15,6 +15,19 @@ class ConfluenceIntegrationController extends Controller
 {
     public function __construct(private readonly ProjectAccessService $accessService) {}
 
+    public function indexConnections(Request $request, int $tenant): JsonResponse
+    {
+        $this->ensureTenantMembership($request, $tenant);
+
+        $connections = AtlassianConnection::query()
+            ->where('tenant_id', $tenant)
+            ->orderByDesc('is_active')
+            ->latest('id')
+            ->get();
+
+        return response()->json(['data' => $connections]);
+    }
+
     public function storeConnection(Request $request, int $tenant): JsonResponse
     {
         $this->ensureTenantMembership($request, $tenant);
@@ -162,5 +175,4 @@ class ConfluenceIntegrationController extends Controller
         abort_unless($isMember, 403);
     }
 }
-
 

@@ -22,6 +22,37 @@ class ConfluenceIntegrationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_user_can_list_existing_tenant_connections(): void
+    {
+        [$user, $tenant] = $this->createTenantContext();
+
+        AtlassianConnection::query()->create([
+            'tenant_id' => $tenant->id,
+            'created_by' => $user->id,
+            'base_url' => 'https://first.atlassian.net',
+            'email' => 'first@example.test',
+            'api_token' => 'token-first',
+            'is_active' => true,
+        ]);
+
+        AtlassianConnection::query()->create([
+            'tenant_id' => $tenant->id,
+            'created_by' => $user->id,
+            'base_url' => 'https://second.atlassian.net',
+            'email' => 'second@example.test',
+            'api_token' => 'token-second',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/tenants/'.$tenant->id.'/confluence/connections');
+
+        $response->assertOk();
+        $response->assertJsonCount(2, 'data');
+        $response->assertJsonPath('data.0.email', 'second@example.test');
+        $response->assertJsonPath('data.1.email', 'first@example.test');
+    }
+
     public function test_user_can_create_connection_and_list_spaces(): void
     {
         [$user, $tenant] = $this->createTenantContext();
@@ -223,4 +254,3 @@ class ConfluenceIntegrationTest extends TestCase
         ]);
     }
 }
-

@@ -50,4 +50,3 @@ class ProjectConfluenceSpace extends Model
         return $this->belongsTo(User::class, 'selected_by');
     }
 }
-

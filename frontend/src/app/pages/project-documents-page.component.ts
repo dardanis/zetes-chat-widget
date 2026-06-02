@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { CrawledUrl, ProjectConfluenceSpace, ConfluenceSpace, ProjectDocument, RagApiService } from '../core/rag-api.service';
+import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpace, ProjectDocument, RagApiService } from '../core/rag-api.service';
 
 @Component({
   selector: 'app-project-documents-page',
@@ -156,6 +156,38 @@ import { CrawledUrl, ProjectConfluenceSpace, ConfluenceSpace, ProjectDocument, R
             {{ confluenceSuccess() }}
           </div>
         }
+
+        <div class="mt-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3">
+          <p class="text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Existing connections</p>
+
+          @if (confluenceConnections().length === 0) {
+            <p class="mt-2 text-xs text-[var(--app-text-muted)]">No saved Confluence connections yet. Create one below.</p>
+          } @else {
+            <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+              <select
+                class="min-w-0 flex-1 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
+                [ngModel]="confluenceConnectionId()"
+                (ngModelChange)="onConfluenceConnectionSelected($event)"
+              >
+                <option [ngValue]="null">Select an existing connection</option>
+                @for (connection of confluenceConnections(); track connection.id) {
+                  <option [ngValue]="connection.id">#{{ connection.id }} - {{ connection.email }} - {{ connection.base_url }}</option>
+                }
+              </select>
+
+              <button
+                type="button"
+                (click)="loadConfluenceSpaces()"
+                [disabled]="isConfluenceLoadingSpaces() || !confluenceConnectionId() || !projectTenantId()"
+                class="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-60"
+              >
+                {{ isConfluenceLoadingSpaces() ? 'Loading...' : 'Load spaces' }}
+              </button>
+            </div>
+          }
+        </div>
+
+        <p class="mt-3 text-xs text-[var(--app-text-muted)]">Create another connection (optional):</p>
 
         <div class="mt-4 grid gap-2 sm:grid-cols-2">
           <input
@@ -399,6 +431,7 @@ export class ProjectDocumentsPageComponent implements OnInit {
   protected crawlUrl = '';
   protected readonly activeIngestionTab = signal<'upload' | 'crawler' | 'confluence'>('upload');
   protected readonly projectTenantId = signal<number | null>(null);
+  protected readonly confluenceConnections = signal<AtlassianConnection[]>([]);
   protected readonly confluenceConnectionId = signal<number | null>(null);
   protected readonly availableConfluenceSpaces = signal<ConfluenceSpace[]>([]);
   protected readonly selectedProjectSpaces = signal<ProjectConfluenceSpace[]>([]);
@@ -535,6 +568,7 @@ export class ProjectDocumentsPageComponent implements OnInit {
     }).subscribe({
       next: ({ data }) => {
         this.confluenceConnectionId.set(data.id);
+        this.upsertConfluenceConnection(data);
         this.confluenceSuccess.set('Connection saved. Loading available spaces...');
         this.loadConfluenceSpaces();
       },
@@ -565,6 +599,21 @@ export class ProjectDocumentsPageComponent implements OnInit {
       },
       complete: () => this.isConfluenceLoadingSpaces.set(false),
     });
+  }
+
+  protected onConfluenceConnectionSelected(value: string | number | null): void {
+    const normalized = Number(value);
+
+    if (!Number.isFinite(normalized) || normalized <= 0) {
+      this.confluenceConnectionId.set(null);
+      this.availableConfluenceSpaces.set([]);
+
+      return;
+    }
+
+    this.confluenceConnectionId.set(normalized);
+    this.confluenceSuccess.set('');
+    this.confluenceError.set('');
   }
 
   protected isSpaceSelected(spaceKey: string): boolean {
@@ -643,7 +692,12 @@ export class ProjectDocumentsPageComponent implements OnInit {
     this.api.listProjects().subscribe({
       next: ({ data }) => {
         const project = data.find((item) => item.id === projectId);
-        this.projectTenantId.set(project?.tenant_id ?? null);
+        const tenantId = project?.tenant_id ?? null;
+        this.projectTenantId.set(tenantId);
+
+        if (tenantId) {
+          this.loadConfluenceConnections(tenantId);
+        }
       },
     });
 
@@ -662,6 +716,25 @@ export class ProjectDocumentsPageComponent implements OnInit {
         this.selectedSpaceKeys.set(new Set(data.map((item) => item.space_key)));
       },
     });
+  }
+
+  private loadConfluenceConnections(tenantId: number): void {
+    this.api.listConfluenceConnections(tenantId).subscribe({
+      next: ({ data }) => {
+        this.confluenceConnections.set(data);
+
+        if (!this.confluenceConnectionId() && data.length > 0) {
+          this.confluenceConnectionId.set(data[0].id);
+        }
+      },
+      error: () => {
+        this.confluenceError.set('Failed to load saved Confluence connections.');
+      },
+    });
+  }
+
+  private upsertConfluenceConnection(connection: AtlassianConnection): void {
+    this.confluenceConnections.update((connections) => [connection, ...connections.filter((item) => item.id !== connection.id)]);
   }
 
   protected isDeletingDocument(documentId: number): boolean {
