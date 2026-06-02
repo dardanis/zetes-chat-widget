@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpace, ProjectDocument, RagApiService } from '../core/rag-api.service';
+import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace, ConfluenceSpace, ProjectDocument, RagApiService } from '../core/rag-api.service';
 
 @Component({
   selector: 'app-project-documents-page',
@@ -118,16 +118,32 @@ import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpac
         </div>
 
         <div class="mt-4">
-          <div class="mb-2 flex items-center justify-between">
-            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Crawled URLs</p>
-            <button type="button" (click)="loadCrawledUrls()" class="rounded-md px-2 py-1 text-xs text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)]">Refresh</button>
+          <div class="mb-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Crawled URLs ({{ crawledUrlsTotal() }})</p>
+
+              <div class="flex items-center gap-2">
+                <label class="text-xs text-[var(--app-text-muted)]">Page size</label>
+                <select
+                  [ngModel]="crawledUrlsPerPage()"
+                  (ngModelChange)="setCrawledUrlsPerPage($event)"
+                  class="rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-xs text-[var(--app-text)]"
+                >
+                  @for (size of pageSizeOptions; track size) {
+                    <option [ngValue]="size">{{ size }}</option>
+                  }
+                </select>
+
+                <button type="button" (click)="loadCrawledUrls()" class="rounded-md px-2 py-1 text-xs text-[var(--app-text-muted)] hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]">Refresh</button>
+              </div>
+            </div>
           </div>
 
           @if (crawledUrls().length === 0) {
             <p class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-xs text-[var(--app-text-muted)]">No URLs crawled yet.</p>
           } @else {
             <div class="space-y-2">
-              @for (item of paginatedCrawledUrls(); track item.id) {
+              @for (item of crawledUrls(); track item.id) {
                 <div class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2">
                   <p class="truncate text-xs font-medium text-[var(--app-text)]">{{ item.url }}</p>
                   <p class="mt-1 text-xs text-[var(--app-text-muted)]">{{ item.title || 'Untitled page' }} - {{ item.status }} - {{ item.chunks_count ?? 0 }} chunks</p>
@@ -141,7 +157,7 @@ import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpac
                 <div class="flex items-center gap-2">
                   <button
                     type="button"
-                    (click)="crawledUrlsPage.set(crawledUrlsPage() - 1)"
+                    (click)="goToCrawledUrlsPage(crawledUrlsPage() - 1)"
                     [disabled]="crawledUrlsPage() <= 1"
                     class="rounded-md border border-[var(--app-border)] px-2 py-1 text-xs text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-50"
                   >
@@ -149,7 +165,7 @@ import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpac
                   </button>
                   <button
                     type="button"
-                    (click)="crawledUrlsPage.set(crawledUrlsPage() + 1)"
+                    (click)="goToCrawledUrlsPage(crawledUrlsPage() + 1)"
                     [disabled]="crawledUrlsPage() >= crawledUrlsTotalPages()"
                     class="rounded-md border border-[var(--app-border)] px-2 py-1 text-xs text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-50"
                   >
@@ -260,14 +276,14 @@ import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpac
           </button>
         </div>
 
-        @if (availableConfluenceSpaces().length > 0) {
-          <div class="mt-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3">
+        @if (confluenceConnectionId()) {
+          <div class="mt-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3 shadow-sm">
             <div class="mb-2 flex items-center justify-between">
               <p class="text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Available spaces</p>
               <span class="text-xs text-[var(--app-text-muted)]">{{ selectedSpaceKeys().size }} selected</span>
             </div>
 
-            <div class="mb-2 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div class="mb-2 grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-center">
               <input
                 type="text"
                 [ngModel]="confluenceSpacesSearchQuery()"
@@ -276,21 +292,32 @@ import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpac
                 class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
               />
 
+              <select
+                [ngModel]="confluenceSpacesPerPage()"
+                (ngModelChange)="setConfluenceSpacesPerPage($event)"
+                class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-2 text-sm text-[var(--app-text)]"
+              >
+                @for (size of pageSizeOptions; track size) {
+                  <option [ngValue]="size">{{ size }}/page</option>
+                }
+              </select>
+
               <label class="inline-flex items-center gap-2 text-xs text-[var(--app-text-muted)]">
                 <input
                   type="checkbox"
-                  [checked]="areAllFilteredConfluenceSpacesSelected()"
-                  (change)="toggleSelectAllFilteredConfluenceSpaces($event)"
+                  [checked]="areAllVisibleConfluenceSpacesSelected()"
+                  (change)="toggleSelectAllMatchingConfluenceSpaces($event)"
+                  [disabled]="isConfluenceSelectingAll()"
                 />
-                Select all filtered
+                {{ isConfluenceSelectingAll() ? 'Selecting...' : 'Select all matching' }}
               </label>
             </div>
 
             <div class="max-h-56 space-y-2 overflow-auto pr-1">
-              @if (filteredConfluenceSpaces().length === 0) {
+              @if (availableConfluenceSpaces().length === 0) {
                 <p class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-xs text-[var(--app-text-muted)]">No spaces match your search.</p>
               } @else {
-                @for (space of paginatedConfluenceSpaces(); track space.key) {
+                @for (space of availableConfluenceSpaces(); track space.key) {
                   <label class="flex cursor-pointer items-start gap-3 rounded-md border border-transparent px-2 py-1.5 hover:border-[var(--app-border)] hover:bg-[var(--app-surface)]">
                     <input
                       type="checkbox"
@@ -309,11 +336,11 @@ import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpac
 
             @if (confluenceSpacesTotalPages() > 1) {
               <div class="mt-3 flex items-center justify-between">
-                <p class="text-xs text-[var(--app-text-muted)]">Page {{ confluenceSpacesPage() }} of {{ confluenceSpacesTotalPages() }}</p>
+                <p class="text-xs text-[var(--app-text-muted)]">Page {{ confluenceSpacesPage() }} of {{ confluenceSpacesTotalPages() }} ({{ confluenceSpacesTotal() }} total)</p>
                 <div class="flex items-center gap-2">
                   <button
                     type="button"
-                    (click)="confluenceSpacesPage.set(confluenceSpacesPage() - 1)"
+                    (click)="goToConfluenceSpacesPage(confluenceSpacesPage() - 1)"
                     [disabled]="confluenceSpacesPage() <= 1"
                     class="rounded-md border border-[var(--app-border)] px-2 py-1 text-xs text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-50"
                   >
@@ -321,7 +348,7 @@ import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpac
                   </button>
                   <button
                     type="button"
-                    (click)="confluenceSpacesPage.set(confluenceSpacesPage() + 1)"
+                    (click)="goToConfluenceSpacesPage(confluenceSpacesPage() + 1)"
                     [disabled]="confluenceSpacesPage() >= confluenceSpacesTotalPages()"
                     class="rounded-md border border-[var(--app-border)] px-2 py-1 text-xs text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-50"
                   >
@@ -373,11 +400,26 @@ import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpac
       }
 
       <div>
-        <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-[var(--app-text)]">Documents</h3>
-          <button type="button" (click)="loadDocuments()" class="rounded-md p-1.5 text-[var(--app-text-muted)] hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]" aria-label="Refresh documents">
-            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H4.727a.75.75 0 00-.75.75v3.505a.75.75 0 001.5 0v-1.995l.009.01a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm-1.768-7.908a.75.75 0 00-1.449-.39A5.5 5.5 0 013.894 5.592l-.312-.311h2.433a.75.75 0 000-1.5H2.51a.75.75 0 00-.75.75V8.04a.75.75 0 001.5 0V6.044l.009.01a7 7 0 0011.712-3.138.75.75 0 00-1.437-.4z" clip-rule="evenodd"/></svg>
-          </button>
+        <div class="mb-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-sm font-semibold text-[var(--app-text)]">Documents ({{ documentsTotal() }})</h3>
+            <div class="flex items-center gap-2">
+              <label class="text-xs text-[var(--app-text-muted)]">Page size</label>
+              <select
+                [ngModel]="documentsPerPage()"
+                (ngModelChange)="setDocumentsPerPage($event)"
+                class="rounded-md border border-[var(--app-border)] bg-[var(--app-surface-2)] px-2 py-1 text-xs text-[var(--app-text)]"
+              >
+                @for (size of pageSizeOptions; track size) {
+                  <option [ngValue]="size">{{ size }}</option>
+                }
+              </select>
+
+              <button type="button" (click)="loadDocuments()" class="rounded-md p-1.5 text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)]" aria-label="Refresh documents">
+                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H4.727a.75.75 0 00-.75.75v3.505a.75.75 0 001.5 0v-1.995l.009.01a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm-1.768-7.908a.75.75 0 00-1.449-.39A5.5 5.5 0 013.894 5.592l-.312-.311h2.433a.75.75 0 000-1.5H2.51a.75.75 0 00-.75.75V8.04a.75.75 0 001.5 0V6.044l.009.01a7 7 0 0011.712-3.138.75.75 0 00-1.437-.4z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+          </div>
         </div>
 
         @if (isLoadingDocs()) {
@@ -388,7 +430,7 @@ import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpac
           </div>
         } @else {
           <div class="mt-3 space-y-2">
-            @for (document of paginatedDocuments(); track document.id) {
+            @for (document of documents(); track document.id) {
               <div class="flex items-center justify-between gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3">
                 <div class="min-w-0">
                   <p class="truncate text-sm font-medium text-[var(--app-text)]">{{ document.original_name }}</p>
@@ -452,7 +494,7 @@ import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpac
                 <div class="flex items-center gap-2">
                   <button
                     type="button"
-                    (click)="documentsPage.set(documentsPage() - 1)"
+                    (click)="goToDocumentsPage(documentsPage() - 1)"
                     [disabled]="documentsPage() <= 1"
                     class="rounded-md border border-[var(--app-border)] px-2 py-1 text-xs text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-50"
                   >
@@ -460,7 +502,7 @@ import { AtlassianConnection, CrawledUrl, ProjectConfluenceSpace, ConfluenceSpac
                   </button>
                   <button
                     type="button"
-                    (click)="documentsPage.set(documentsPage() + 1)"
+                    (click)="goToDocumentsPage(documentsPage() + 1)"
                     [disabled]="documentsPage() >= documentsTotalPages()"
                     class="rounded-md border border-[var(--app-border)] px-2 py-1 text-xs text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-50"
                   >
@@ -526,8 +568,17 @@ export class ProjectDocumentsPageComponent implements OnInit {
   protected crawlUrl = '';
   protected readonly activeIngestionTab = signal<'upload' | 'crawler' | 'confluence'>('upload');
   protected readonly documentsPage = signal(1);
+  protected readonly documentsPerPage = signal(10);
+  protected readonly documentsTotal = signal(0);
+  protected readonly documentsLastPage = signal(1);
   protected readonly crawledUrlsPage = signal(1);
+  protected readonly crawledUrlsPerPage = signal(10);
+  protected readonly crawledUrlsTotal = signal(0);
+  protected readonly crawledUrlsLastPage = signal(1);
   protected readonly confluenceSpacesPage = signal(1);
+  protected readonly confluenceSpacesPerPage = signal(10);
+  protected readonly confluenceSpacesTotal = signal(0);
+  protected readonly confluenceSpacesLastPage = signal(1);
   protected readonly confluenceSpacesSearchQuery = signal('');
   protected readonly projectTenantId = signal<number | null>(null);
   protected readonly confluenceConnections = signal<AtlassianConnection[]>([]);
@@ -539,15 +590,15 @@ export class ProjectDocumentsPageComponent implements OnInit {
   protected readonly isConfluenceLoadingSpaces = signal(false);
   protected readonly isConfluenceSavingSpaces = signal(false);
   protected readonly isConfluenceSyncing = signal(false);
+  protected readonly isConfluenceSelectingAll = signal(false);
   protected readonly confluenceError = signal('');
   protected readonly confluenceSuccess = signal('');
   protected confluenceBaseUrl = '';
   protected confluenceEmail = '';
   protected confluenceApiToken = '';
   protected confluenceCloudId = '';
-  private readonly documentsPerPage = 10;
-  private readonly crawledUrlsPerPage = 10;
-  private readonly confluenceSpacesPerPage = 10;
+  protected readonly pageSizeOptions = [10, 25, 50, 100];
+  protected readonly confluenceSpaceLookup = signal<Map<string, ConfluenceSpace>>(new Map());
 
   ngOnInit(): void {
     this.loadDocuments();
@@ -610,10 +661,13 @@ export class ProjectDocumentsPageComponent implements OnInit {
     this.isLoadingDocs.set(true);
     this.deleteError.set('');
 
-    this.api.listDocuments(this.requireProjectId()).subscribe({
-      next: ({ data }) => {
+    this.api.listDocuments(this.requireProjectId(), {
+      page: this.documentsPage(),
+      per_page: this.documentsPerPage(),
+    }).subscribe({
+      next: ({ data, meta }) => {
         this.documents.set(data);
-        this.documentsPage.set(1);
+        this.applyPaginationMeta(meta, this.documentsPage, this.documentsPerPage, this.documentsTotal, this.documentsLastPage);
       },
       error: () => {
         this.uploadError.set('Failed to load documents.');
@@ -624,10 +678,13 @@ export class ProjectDocumentsPageComponent implements OnInit {
   }
 
   protected loadCrawledUrls(): void {
-    this.api.listCrawledUrls(this.requireProjectId()).subscribe({
-      next: ({ data }) => {
+    this.api.listCrawledUrls(this.requireProjectId(), {
+      page: this.crawledUrlsPage(),
+      per_page: this.crawledUrlsPerPage(),
+    }).subscribe({
+      next: ({ data, meta }) => {
         this.crawledUrls.set(data);
-        this.crawledUrlsPage.set(1);
+        this.applyPaginationMeta(meta, this.crawledUrlsPage, this.crawledUrlsPerPage, this.crawledUrlsTotal, this.crawledUrlsLastPage);
       },
       error: () => this.crawlError.set('Failed to load crawled URLs.'),
     });
@@ -698,10 +755,15 @@ export class ProjectDocumentsPageComponent implements OnInit {
     this.isConfluenceLoadingSpaces.set(true);
     this.confluenceError.set('');
 
-    this.api.listConfluenceSpaces(tenantId, connectionId).subscribe({
-      next: ({ data }) => {
+    this.api.listConfluenceSpaces(tenantId, connectionId, {
+      page: this.confluenceSpacesPage(),
+      per_page: this.confluenceSpacesPerPage(),
+      q: this.confluenceSpacesSearchQuery(),
+    }).subscribe({
+      next: ({ data, meta }) => {
         this.availableConfluenceSpaces.set(data);
-        this.confluenceSpacesPage.set(1);
+        this.applyPaginationMeta(meta, this.confluenceSpacesPage, this.confluenceSpacesPerPage, this.confluenceSpacesTotal, this.confluenceSpacesLastPage);
+        this.mergeConfluenceSpacesIntoLookup(data);
       },
       error: (error: HttpErrorResponse) => {
         this.confluenceError.set(error.error?.message ?? 'Failed to load Confluence spaces.');
@@ -716,6 +778,7 @@ export class ProjectDocumentsPageComponent implements OnInit {
     if (!Number.isFinite(normalized) || normalized <= 0) {
       this.confluenceConnectionId.set(null);
       this.availableConfluenceSpaces.set([]);
+      this.confluenceSpaceLookup.set(new Map());
       this.confluenceSpacesSearchQuery.set('');
       this.confluenceSpacesPage.set(1);
 
@@ -725,6 +788,8 @@ export class ProjectDocumentsPageComponent implements OnInit {
     this.confluenceConnectionId.set(normalized);
     this.confluenceSuccess.set('');
     this.confluenceError.set('');
+    this.availableConfluenceSpaces.set([]);
+    this.confluenceSpaceLookup.set(new Map());
     this.confluenceSpacesSearchQuery.set('');
     this.confluenceSpacesPage.set(1);
   }
@@ -732,37 +797,107 @@ export class ProjectDocumentsPageComponent implements OnInit {
   protected onConfluenceSpacesSearchChange(value: string): void {
     this.confluenceSpacesSearchQuery.set(value);
     this.confluenceSpacesPage.set(1);
+    this.loadConfluenceSpaces();
   }
 
-  protected areAllFilteredConfluenceSpacesSelected(): boolean {
-    const filtered = this.filteredConfluenceSpaces();
+  protected areAllVisibleConfluenceSpacesSelected(): boolean {
+    const visibleSpaces = this.availableConfluenceSpaces();
 
-    if (filtered.length === 0) {
+    if (visibleSpaces.length === 0) {
       return false;
     }
 
     const selectedKeys = this.selectedSpaceKeys();
 
-    return filtered.every((space) => selectedKeys.has(space.key));
+    return visibleSpaces.every((space) => selectedKeys.has(space.key));
   }
 
-  protected toggleSelectAllFilteredConfluenceSpaces(event: Event): void {
+  protected toggleSelectAllMatchingConfluenceSpaces(event: Event): void {
+    const tenantId = this.projectTenantId();
+    const connectionId = this.confluenceConnectionId();
+
+    if (!tenantId || !connectionId) {
+      return;
+    }
+
     const checked = (event.target as HTMLInputElement).checked;
-    const keys = this.filteredConfluenceSpaces().map((space) => space.key);
+    this.isConfluenceSelectingAll.set(true);
+    this.confluenceError.set('');
 
-    this.selectedSpaceKeys.update((current) => {
-      const next = new Set(current);
+    this.api.listConfluenceSpaces(tenantId, connectionId, {
+      page: 1,
+      per_page: 100,
+      q: this.confluenceSpacesSearchQuery(),
+      all: true,
+    }).subscribe({
+      next: ({ data }) => {
+        const keys = data.map((space) => space.key);
+        this.mergeConfluenceSpacesIntoLookup(data);
 
-      for (const key of keys) {
-        if (checked) {
-          next.add(key);
-        } else {
-          next.delete(key);
-        }
-      }
+        this.selectedSpaceKeys.update((current) => {
+          const next = new Set(current);
 
-      return next;
+          for (const key of keys) {
+            if (checked) {
+              next.add(key);
+            } else {
+              next.delete(key);
+            }
+          }
+
+          return next;
+        });
+      },
+      error: (error: HttpErrorResponse) => {
+        this.confluenceError.set(error.error?.message ?? 'Failed to select all matching spaces.');
+      },
+      complete: () => this.isConfluenceSelectingAll.set(false),
     });
+  }
+
+  protected setDocumentsPerPage(value: number): void {
+    this.documentsPerPage.set(Number(value));
+    this.documentsPage.set(1);
+    this.loadDocuments();
+  }
+
+  protected goToDocumentsPage(page: number): void {
+    if (page < 1 || page > this.documentsTotalPages()) {
+      return;
+    }
+
+    this.documentsPage.set(page);
+    this.loadDocuments();
+  }
+
+  protected setCrawledUrlsPerPage(value: number): void {
+    this.crawledUrlsPerPage.set(Number(value));
+    this.crawledUrlsPage.set(1);
+    this.loadCrawledUrls();
+  }
+
+  protected goToCrawledUrlsPage(page: number): void {
+    if (page < 1 || page > this.crawledUrlsTotalPages()) {
+      return;
+    }
+
+    this.crawledUrlsPage.set(page);
+    this.loadCrawledUrls();
+  }
+
+  protected setConfluenceSpacesPerPage(value: number): void {
+    this.confluenceSpacesPerPage.set(Number(value));
+    this.confluenceSpacesPage.set(1);
+    this.loadConfluenceSpaces();
+  }
+
+  protected goToConfluenceSpacesPage(page: number): void {
+    if (page < 1 || page > this.confluenceSpacesTotalPages()) {
+      return;
+    }
+
+    this.confluenceSpacesPage.set(page);
+    this.loadConfluenceSpaces();
   }
 
   protected isSpaceSelected(spaceKey: string): boolean {
@@ -793,7 +928,8 @@ export class ProjectDocumentsPageComponent implements OnInit {
     }
 
     const selectedKeys = this.selectedSpaceKeys();
-    const spaces = this.availableConfluenceSpaces().filter((space) => selectedKeys.has(space.key));
+    const spaces = Array.from(selectedKeys)
+      .map((key) => this.confluenceSpaceLookup().get(key) ?? ({ key, name: key, type: 'global' } satisfies ConfluenceSpace));
 
     this.isConfluenceSavingSpaces.set(true);
     this.confluenceError.set('');
@@ -862,6 +998,13 @@ export class ProjectDocumentsPageComponent implements OnInit {
           this.confluenceConnectionId.set(data[0].atlassian_connection_id);
         }
 
+        this.mergeConfluenceSpacesIntoLookup(data.map((item) => ({
+          id: item.space_id,
+          key: item.space_key,
+          name: item.space_name,
+          type: item.space_type,
+        })));
+
         this.selectedSpaceKeys.set(new Set(data.map((item) => item.space_key)));
       },
     });
@@ -887,54 +1030,45 @@ export class ProjectDocumentsPageComponent implements OnInit {
   }
 
   protected documentsTotalPages(): number {
-    return this.totalPages(this.documents().length, this.documentsPerPage);
-  }
-
-  protected paginatedDocuments(): ProjectDocument[] {
-    return this.paginate(this.documents(), this.documentsPage(), this.documentsPerPage);
+    return this.documentsLastPage();
   }
 
   protected crawledUrlsTotalPages(): number {
-    return this.totalPages(this.crawledUrls().length, this.crawledUrlsPerPage);
-  }
-
-  protected paginatedCrawledUrls(): CrawledUrl[] {
-    return this.paginate(this.crawledUrls(), this.crawledUrlsPage(), this.crawledUrlsPerPage);
-  }
-
-  protected filteredConfluenceSpaces(): ConfluenceSpace[] {
-    const query = this.confluenceSpacesSearchQuery().trim().toLowerCase();
-
-    if (!query) {
-      return this.availableConfluenceSpaces();
-    }
-
-    return this.availableConfluenceSpaces().filter((space) => {
-      const name = space.name.toLowerCase();
-      const key = space.key.toLowerCase();
-
-      return name.includes(query) || key.includes(query);
-    });
+    return this.crawledUrlsLastPage();
   }
 
   protected confluenceSpacesTotalPages(): number {
-    return this.totalPages(this.filteredConfluenceSpaces().length, this.confluenceSpacesPerPage);
+    return this.confluenceSpacesLastPage();
   }
 
-  protected paginatedConfluenceSpaces(): ConfluenceSpace[] {
-    return this.paginate(this.filteredConfluenceSpaces(), this.confluenceSpacesPage(), this.confluenceSpacesPerPage);
+  private applyPaginationMeta(
+    meta: PaginationMeta,
+    pageSignal: { set(value: number): void },
+    perPageSignal: { set(value: number): void },
+    totalSignal: { set(value: number): void },
+    lastPageSignal: { set(value: number): void },
+  ): void {
+    pageSignal.set(meta.current_page);
+    perPageSignal.set(meta.per_page);
+    totalSignal.set(meta.total);
+    lastPageSignal.set(meta.last_page);
   }
 
-  private totalPages(totalItems: number, perPage: number): number {
-    return Math.max(1, Math.ceil(totalItems / perPage));
-  }
+  private mergeConfluenceSpacesIntoLookup(spaces: Array<Pick<ConfluenceSpace, 'key' | 'name'> & Partial<ConfluenceSpace>>): void {
+    this.confluenceSpaceLookup.update((current) => {
+      const next = new Map(current);
 
-  private paginate<T>(items: T[], page: number, perPage: number): T[] {
-    const maxPage = this.totalPages(items.length, perPage);
-    const safePage = Math.min(Math.max(page, 1), maxPage);
-    const start = (safePage - 1) * perPage;
+      for (const space of spaces) {
+        next.set(space.key, {
+          id: space.id ?? null,
+          key: space.key,
+          name: space.name,
+          type: space.type ?? 'global',
+        });
+      }
 
-    return items.slice(start, start + perPage);
+      return next;
+    });
   }
 
   protected isDeletingDocument(documentId: number): boolean {

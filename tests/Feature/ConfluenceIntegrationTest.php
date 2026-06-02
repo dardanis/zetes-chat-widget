@@ -86,6 +86,45 @@ class ConfluenceIntegrationTest extends TestCase
         $listResponse->assertJsonPath('data.1.name', 'Operations');
     }
 
+    public function test_user_can_paginate_and_search_confluence_spaces(): void
+    {
+        [$user, $tenant] = $this->createTenantContext();
+
+        Http::fake([
+            'https://example.atlassian.net/wiki/rest/api/space*' => Http::response([
+                'results' => [
+                    ['id' => '1001', 'key' => 'ENG', 'name' => 'Engineering', 'type' => 'global'],
+                    ['id' => '1002', 'key' => 'OPS', 'name' => 'Operations', 'type' => 'global'],
+                    ['id' => '1003', 'key' => 'SEC', 'name' => 'Security', 'type' => 'global'],
+                ],
+                '_links' => [],
+            ], 200),
+        ]);
+
+        $createResponse = $this->actingAs($user)->postJson('/api/tenants/'.$tenant->id.'/confluence/connections', [
+            'base_url' => 'https://example.atlassian.net',
+            'email' => 'owner@example.test',
+            'api_token' => 'atlassian-token',
+        ]);
+
+        $connectionId = $createResponse->json('data.id');
+
+        $pageResponse = $this->actingAs($user)
+            ->getJson('/api/tenants/'.$tenant->id.'/confluence/connections/'.$connectionId.'/spaces?per_page=2&page=2');
+
+        $pageResponse->assertOk();
+        $pageResponse->assertJsonCount(1, 'data');
+        $pageResponse->assertJsonPath('meta.current_page', 2);
+        $pageResponse->assertJsonPath('meta.last_page', 2);
+
+        $searchResponse = $this->actingAs($user)
+            ->getJson('/api/tenants/'.$tenant->id.'/confluence/connections/'.$connectionId.'/spaces?q=ops');
+
+        $searchResponse->assertOk();
+        $searchResponse->assertJsonCount(1, 'data');
+        $searchResponse->assertJsonPath('data.0.key', 'OPS');
+    }
+
     public function test_user_can_select_spaces_and_queue_project_sync(): void
     {
         Queue::fake();

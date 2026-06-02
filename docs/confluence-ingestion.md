@@ -43,3 +43,8 @@ This app now supports selecting Confluence spaces per local project and syncing 
 - Sync runs through queued jobs on the `rag` queue by default.
 - Documents are stored with `ingestion_type = confluence`.
 - Each sync is tenant/project scoped to preserve isolation.
+- Spaces endpoint supports server-side list controls:
+  - `page` (default `1`)
+  - `per_page` (default `10`, max `100`)
+  - `q` (search by key/name)
+  - `all=1` (returns all matches in one response, useful for "select all matching")

@@ -8,6 +8,7 @@ use App\Models\ProjectDocument;
 use App\Services\Rag\ProjectAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
@@ -21,13 +22,24 @@ class ProjectDocumentController extends Controller
     {
         $resolvedProject = $this->accessService->resolveProjectForUser($request->user(), $project);
 
+        $payload = $request->validate([
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $perPage = (int) ($payload['per_page'] ?? 10);
+        $page = (int) ($payload['page'] ?? 1);
+
         $documents = ProjectDocument::query()
             ->where('tenant_id', $resolvedProject->tenant_id)
             ->where('project_id', $resolvedProject->id)
             ->latest('id')
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json(['data' => $documents]);
+        return response()->json([
+            'data' => $documents->items(),
+            'meta' => $this->paginationMeta($documents),
+        ]);
     }
 
     public function store(Request $request, int $project): JsonResponse
@@ -143,14 +155,22 @@ class ProjectDocumentController extends Controller
     {
         $resolvedProject = $this->accessService->resolveProjectForUser($request->user(), $project);
 
+        $payload = $request->validate([
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $perPage = (int) ($payload['per_page'] ?? 10);
+        $page = (int) ($payload['page'] ?? 1);
+
         $crawledUrls = ProjectDocument::query()
             ->where('tenant_id', $resolvedProject->tenant_id)
             ->where('project_id', $resolvedProject->id)
             ->where('ingestion_type', 'web')
             ->whereNotNull('source_url')
             ->latest('id')
-            ->get()
-            ->map(fn (ProjectDocument $document): array => [
+            ->paginate($perPage, ['*'], 'page', $page)
+            ->through(fn (ProjectDocument $document): array => [
                 'id' => $document->id,
                 'url' => $document->source_url,
                 'title' => data_get($document->metadata, 'title', $document->original_name),
@@ -158,10 +178,12 @@ class ProjectDocumentController extends Controller
                 'chunks_count' => (int) data_get($document->metadata, 'chunks_count', 0),
                 'processed_at' => $document->processed_at?->toIso8601String(),
                 'updated_at' => $document->updated_at?->toIso8601String(),
-            ])
-            ->values();
+            ]);
 
-        return response()->json(['data' => $crawledUrls]);
+        return response()->json([
+            'data' => $crawledUrls->items(),
+            'meta' => $this->paginationMeta($crawledUrls),
+        ]);
     }
 
     public function destroy(Request $request, int $project, int $document): JsonResponse
@@ -181,6 +203,16 @@ class ProjectDocumentController extends Controller
         $projectDocument->delete();
 
         return response()->json([], 204);
+    }
+
+    private function paginationMeta(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'current_page' => $paginator->currentPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+            'last_page' => $paginator->lastPage(),
+        ];
     }
 }
 

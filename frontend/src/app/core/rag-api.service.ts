@@ -128,6 +128,18 @@ interface ApiListResponse<T> {
   data: T[];
 }
 
+export interface PaginationMeta {
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+}
+
+export interface ApiPaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
 interface ApiItemResponse<T> {
   data: T;
 }
@@ -185,8 +197,13 @@ export class RagApiService {
     return this.http.get<{ data: DashboardStats }>('/api/stats');
   }
 
-  listDocuments(projectId: number): Observable<ApiListResponse<ProjectDocument>> {
-    return this.http.get<ApiListResponse<ProjectDocument>>(`/api/projects/${projectId}/documents`);
+  listDocuments(projectId: number, options?: { page?: number; per_page?: number }): Observable<ApiPaginatedResponse<ProjectDocument>> {
+    return this.http.get<ApiPaginatedResponse<ProjectDocument>>(`/api/projects/${projectId}/documents`, {
+      params: {
+        page: String(options?.page ?? 1),
+        per_page: String(options?.per_page ?? 10),
+      },
+    });
   }
 
   uploadDocument(projectId: number, file: File): Observable<ApiItemResponse<ProjectDocument>> {
@@ -210,8 +227,13 @@ export class RagApiService {
     );
   }
 
-  listCrawledUrls(projectId: number): Observable<ApiListResponse<CrawledUrl>> {
-    return this.http.get<ApiListResponse<CrawledUrl>>(`/api/projects/${projectId}/crawled-urls`);
+  listCrawledUrls(projectId: number, options?: { page?: number; per_page?: number }): Observable<ApiPaginatedResponse<CrawledUrl>> {
+    return this.http.get<ApiPaginatedResponse<CrawledUrl>>(`/api/projects/${projectId}/crawled-urls`, {
+      params: {
+        page: String(options?.page ?? 1),
+        per_page: String(options?.per_page ?? 10),
+      },
+    });
   }
 
   createConfluenceConnection(
@@ -227,8 +249,19 @@ export class RagApiService {
     return this.http.get<ApiListResponse<AtlassianConnection>>(`/api/tenants/${tenantId}/confluence/connections`);
   }
 
-  listConfluenceSpaces(tenantId: number, connectionId: number): Observable<ApiListResponse<ConfluenceSpace>> {
-    return this.http.get<ApiListResponse<ConfluenceSpace>>(`/api/tenants/${tenantId}/confluence/connections/${connectionId}/spaces`);
+  listConfluenceSpaces(
+    tenantId: number,
+    connectionId: number,
+    options?: { page?: number; per_page?: number; q?: string; all?: boolean }
+  ): Observable<ApiPaginatedResponse<ConfluenceSpace>> {
+    return this.http.get<ApiPaginatedResponse<ConfluenceSpace>>(`/api/tenants/${tenantId}/confluence/connections/${connectionId}/spaces`, {
+      params: {
+        page: String(options?.page ?? 1),
+        per_page: String(options?.per_page ?? 10),
+        q: options?.q ?? '',
+        all: options?.all ? '1' : '0',
+      },
+    });
   }
 
   listProjectConfluenceSpaces(projectId: number): Observable<ApiListResponse<ProjectConfluenceSpace>> {

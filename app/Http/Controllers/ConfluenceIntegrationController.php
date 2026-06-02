@@ -9,6 +9,7 @@ use App\Services\Rag\ConfluenceApiService;
 use App\Services\Rag\ProjectAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class ConfluenceIntegrationController extends Controller
@@ -57,9 +58,58 @@ class ConfluenceIntegrationController extends Controller
         $this->ensureTenantMembership($request, $tenant);
         abort_if($connection->tenant_id !== $tenant, 404);
 
-        $spaces = $confluence->listSpaces($connection);
+        $payload = $request->validate([
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'q' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'all' => ['sometimes', 'boolean'],
+        ]);
 
-        return response()->json(['data' => $spaces]);
+        $page = (int) ($payload['page'] ?? 1);
+        $perPage = (int) ($payload['per_page'] ?? 10);
+        $query = strtolower(trim((string) ($payload['q'] ?? '')));
+        $loadAll = (bool) ($payload['all'] ?? false);
+
+        $spaces = collect($confluence->listSpaces($connection));
+
+        if ($query !== '') {
+            $spaces = $spaces->filter(static function (array $space) use ($query): bool {
+                $name = strtolower((string) ($space['name'] ?? ''));
+                $key = strtolower((string) ($space['key'] ?? ''));
+
+                return str_contains($name, $query) || str_contains($key, $query);
+            })->values();
+        }
+
+        if ($loadAll) {
+            return response()->json([
+                'data' => $spaces->values()->all(),
+                'meta' => [
+                    'current_page' => 1,
+                    'per_page' => max(1, $spaces->count()),
+                    'total' => $spaces->count(),
+                    'last_page' => 1,
+                ],
+            ]);
+        }
+
+        $total = $spaces->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $safePage = min(max($page, 1), $lastPage);
+        $items = $spaces
+            ->slice(($safePage - 1) * $perPage, $perPage)
+            ->values()
+            ->all();
+
+        return response()->json([
+            'data' => $items,
+            'meta' => [
+                'current_page' => $safePage,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => $lastPage,
+            ],
+        ]);
     }
 
     public function indexProjectSpaces(Request $request, int $project): JsonResponse
