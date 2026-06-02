@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { CrawledUrl, ProjectDocument, RagApiService } from '../core/rag-api.service';
+import { CrawledUrl, ProjectConfluenceSpace, ConfluenceSpace, ProjectDocument, RagApiService } from '../core/rag-api.service';
 
 @Component({
   selector: 'app-project-documents-page',
@@ -10,6 +10,39 @@ import { CrawledUrl, ProjectDocument, RagApiService } from '../core/rag-api.serv
   imports: [FormsModule],
   template: `
     <section class="space-y-6">
+      <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-2">
+        <div class="grid gap-2 sm:grid-cols-3">
+          <button
+            type="button"
+            (click)="activeIngestionTab.set('upload')"
+            [class.bg-[var(--app-accent-soft)]]="activeIngestionTab() === 'upload'"
+            [class.text-[var(--app-accent)]]="activeIngestionTab() === 'upload'"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)]"
+          >
+            Upload document
+          </button>
+          <button
+            type="button"
+            (click)="activeIngestionTab.set('crawler')"
+            [class.bg-[var(--app-accent-soft)]]="activeIngestionTab() === 'crawler'"
+            [class.text-[var(--app-accent)]]="activeIngestionTab() === 'crawler'"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)]"
+          >
+            Website crawler
+          </button>
+          <button
+            type="button"
+            (click)="activeIngestionTab.set('confluence')"
+            [class.bg-[var(--app-accent-soft)]]="activeIngestionTab() === 'confluence'"
+            [class.text-[var(--app-accent)]]="activeIngestionTab() === 'confluence'"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)]"
+          >
+            Confluence spaces
+          </button>
+        </div>
+      </div>
+
+      @if (activeIngestionTab() === 'upload') {
       <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
         <h3 class="text-sm font-semibold text-[var(--app-text)]">Upload document</h3>
         <p class="mt-1 text-xs text-[var(--app-text-muted)]">Files are queued for parsing, chunking, and embedding automatically.</p>
@@ -53,7 +86,9 @@ import { CrawledUrl, ProjectDocument, RagApiService } from '../core/rag-api.serv
           </button>
         }
       </div>
+      }
 
+      @if (activeIngestionTab() === 'crawler') {
       <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
         <h3 class="text-sm font-semibold text-[var(--app-text)]">Website crawler</h3>
         <p class="mt-1 text-xs text-[var(--app-text-muted)]">Paste a URL to crawl and index same-domain pages automatically for this project.</p>
@@ -102,6 +137,137 @@ import { CrawledUrl, ProjectDocument, RagApiService } from '../core/rag-api.serv
           }
         </div>
       </div>
+      }
+
+      @if (activeIngestionTab() === 'confluence') {
+      <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
+        <h3 class="text-sm font-semibold text-[var(--app-text)]">Confluence spaces</h3>
+        <p class="mt-1 text-xs text-[var(--app-text-muted)]">Connect Atlassian, choose spaces for this project, and queue sync into your RAG index.</p>
+
+        @if (confluenceError()) {
+          <div class="mt-3 flex items-start gap-2 rounded-lg border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 px-3 py-2 text-sm text-[var(--app-danger)]">
+            <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+            <span>{{ confluenceError() }}</span>
+          </div>
+        }
+
+        @if (confluenceSuccess()) {
+          <div class="mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-500">
+            {{ confluenceSuccess() }}
+          </div>
+        }
+
+        <div class="mt-4 grid gap-2 sm:grid-cols-2">
+          <input
+            type="url"
+            [(ngModel)]="confluenceBaseUrl"
+            placeholder="https://your-site.atlassian.net"
+            class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
+          />
+          <input
+            type="email"
+            [(ngModel)]="confluenceEmail"
+            placeholder="you@company.com"
+            class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
+          />
+          <input
+            type="password"
+            [(ngModel)]="confluenceApiToken"
+            placeholder="Atlassian API token"
+            class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
+          />
+          <input
+            type="text"
+            [(ngModel)]="confluenceCloudId"
+            placeholder="Cloud ID (optional)"
+            class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
+          />
+        </div>
+
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            (click)="connectAndLoadConfluenceSpaces()"
+            [disabled]="isConfluenceConnecting() || !canConnectConfluence()"
+            class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+          >
+            {{ isConfluenceConnecting() ? 'Connecting...' : 'Connect + load spaces' }}
+          </button>
+
+          <button
+            type="button"
+            (click)="loadConfluenceSpaces()"
+            [disabled]="isConfluenceLoadingSpaces() || !confluenceConnectionId() || !projectTenantId()"
+            class="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)] disabled:opacity-60"
+          >
+            {{ isConfluenceLoadingSpaces() ? 'Loading...' : 'Refresh spaces' }}
+          </button>
+        </div>
+
+        @if (availableConfluenceSpaces().length > 0) {
+          <div class="mt-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3">
+            <div class="mb-2 flex items-center justify-between">
+              <p class="text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Available spaces</p>
+              <span class="text-xs text-[var(--app-text-muted)]">{{ selectedSpaceKeys().size }} selected</span>
+            </div>
+
+            <div class="max-h-56 space-y-2 overflow-auto pr-1">
+              @for (space of availableConfluenceSpaces(); track space.key) {
+                <label class="flex cursor-pointer items-start gap-3 rounded-md border border-transparent px-2 py-1.5 hover:border-[var(--app-border)] hover:bg-[var(--app-surface)]">
+                  <input
+                    type="checkbox"
+                    class="mt-0.5"
+                    [checked]="isSpaceSelected(space.key)"
+                    (change)="toggleConfluenceSpace(space, $event)"
+                  />
+                  <span class="min-w-0">
+                    <span class="block truncate text-sm font-medium text-[var(--app-text)]">{{ space.name }}</span>
+                    <span class="block text-xs text-[var(--app-text-muted)]">{{ space.key }} - {{ space.type || 'global' }}</span>
+                  </span>
+                </label>
+              }
+            </div>
+
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                (click)="saveSelectedConfluenceSpaces()"
+                [disabled]="isConfluenceSavingSpaces() || !confluenceConnectionId()"
+                class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+              >
+                {{ isConfluenceSavingSpaces() ? 'Saving...' : 'Save selected spaces' }}
+              </button>
+
+              <button
+                type="button"
+                (click)="syncConfluenceSpaces()"
+                [disabled]="isConfluenceSyncing() || selectedProjectSpaces().length === 0"
+                class="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-60"
+              >
+                {{ isConfluenceSyncing() ? 'Queueing...' : 'Sync now' }}
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (selectedProjectSpaces().length > 0) {
+          <div class="mt-4">
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Saved for this project</p>
+            <div class="space-y-2">
+              @for (space of selectedProjectSpaces(); track space.id) {
+                <div class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2">
+                  <p class="text-sm font-medium text-[var(--app-text)]">{{ space.space_name }}</p>
+                  <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">{{ space.space_key }} - {{ space.space_type }}</p>
+                  @if (space.last_synced_at) {
+                    <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">Last sync: {{ space.last_synced_at }}</p>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      }
 
       <div>
         <div class="flex items-center justify-between">
@@ -231,10 +397,36 @@ export class ProjectDocumentsPageComponent implements OnInit {
   protected readonly isCrawling = signal(false);
   protected readonly crawlError = signal('');
   protected crawlUrl = '';
+  protected readonly activeIngestionTab = signal<'upload' | 'crawler' | 'confluence'>('upload');
+  protected readonly projectTenantId = signal<number | null>(null);
+  protected readonly confluenceConnectionId = signal<number | null>(null);
+  protected readonly availableConfluenceSpaces = signal<ConfluenceSpace[]>([]);
+  protected readonly selectedProjectSpaces = signal<ProjectConfluenceSpace[]>([]);
+  protected readonly selectedSpaceKeys = signal<Set<string>>(new Set());
+  protected readonly isConfluenceConnecting = signal(false);
+  protected readonly isConfluenceLoadingSpaces = signal(false);
+  protected readonly isConfluenceSavingSpaces = signal(false);
+  protected readonly isConfluenceSyncing = signal(false);
+  protected readonly confluenceError = signal('');
+  protected readonly confluenceSuccess = signal('');
+  protected confluenceBaseUrl = '';
+  protected confluenceEmail = '';
+  protected confluenceApiToken = '';
+  protected confluenceCloudId = '';
 
   ngOnInit(): void {
     this.loadDocuments();
     this.loadCrawledUrls();
+    this.loadConfluenceContext();
+  }
+
+  protected canConnectConfluence(): boolean {
+    return Boolean(
+      this.projectTenantId()
+      && this.confluenceBaseUrl.trim()
+      && this.confluenceEmail.trim()
+      && this.confluenceApiToken.trim(),
+    );
   }
 
   protected onFileSelected(event: Event): void {
@@ -319,6 +511,156 @@ export class ProjectDocumentsPageComponent implements OnInit {
         this.crawlError.set(error.error?.message ?? 'Unable to start website crawl.');
       },
       complete: () => this.isCrawling.set(false),
+    });
+  }
+
+  protected connectAndLoadConfluenceSpaces(): void {
+    const tenantId = this.projectTenantId();
+
+    if (!tenantId) {
+      this.confluenceError.set('Project tenant was not resolved yet. Reload and try again.');
+
+      return;
+    }
+
+    this.isConfluenceConnecting.set(true);
+    this.confluenceError.set('');
+    this.confluenceSuccess.set('');
+
+    this.api.createConfluenceConnection(tenantId, {
+      base_url: this.confluenceBaseUrl.trim(),
+      email: this.confluenceEmail.trim(),
+      api_token: this.confluenceApiToken.trim(),
+      cloud_id: this.confluenceCloudId.trim() || null,
+    }).subscribe({
+      next: ({ data }) => {
+        this.confluenceConnectionId.set(data.id);
+        this.confluenceSuccess.set('Connection saved. Loading available spaces...');
+        this.loadConfluenceSpaces();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.confluenceError.set(error.error?.message ?? 'Failed to create Confluence connection.');
+      },
+      complete: () => this.isConfluenceConnecting.set(false),
+    });
+  }
+
+  protected loadConfluenceSpaces(): void {
+    const tenantId = this.projectTenantId();
+    const connectionId = this.confluenceConnectionId();
+
+    if (!tenantId || !connectionId) {
+      return;
+    }
+
+    this.isConfluenceLoadingSpaces.set(true);
+    this.confluenceError.set('');
+
+    this.api.listConfluenceSpaces(tenantId, connectionId).subscribe({
+      next: ({ data }) => {
+        this.availableConfluenceSpaces.set(data);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.confluenceError.set(error.error?.message ?? 'Failed to load Confluence spaces.');
+      },
+      complete: () => this.isConfluenceLoadingSpaces.set(false),
+    });
+  }
+
+  protected isSpaceSelected(spaceKey: string): boolean {
+    return this.selectedSpaceKeys().has(spaceKey);
+  }
+
+  protected toggleConfluenceSpace(space: ConfluenceSpace, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+
+    this.selectedSpaceKeys.update((keys) => {
+      const next = new Set(keys);
+
+      if (checked) {
+        next.add(space.key);
+      } else {
+        next.delete(space.key);
+      }
+
+      return next;
+    });
+  }
+
+  protected saveSelectedConfluenceSpaces(): void {
+    const connectionId = this.confluenceConnectionId();
+
+    if (!connectionId) {
+      return;
+    }
+
+    const selectedKeys = this.selectedSpaceKeys();
+    const spaces = this.availableConfluenceSpaces().filter((space) => selectedKeys.has(space.key));
+
+    this.isConfluenceSavingSpaces.set(true);
+    this.confluenceError.set('');
+    this.confluenceSuccess.set('');
+
+    this.api.saveProjectConfluenceSpaces(this.requireProjectId(), {
+      connection_id: connectionId,
+      spaces,
+    }).subscribe({
+      next: ({ data }) => {
+        this.selectedProjectSpaces.set(data);
+        this.confluenceSuccess.set('Selected Confluence spaces saved for this project.');
+      },
+      error: (error: HttpErrorResponse) => {
+        this.confluenceError.set(error.error?.message ?? 'Failed to save selected spaces.');
+      },
+      complete: () => this.isConfluenceSavingSpaces.set(false),
+    });
+  }
+
+  protected syncConfluenceSpaces(): void {
+    this.isConfluenceSyncing.set(true);
+    this.confluenceError.set('');
+    this.confluenceSuccess.set('');
+
+    const connectionId = this.confluenceConnectionId();
+    const payload = connectionId ? { connection_id: connectionId } : undefined;
+
+    this.api.syncProjectConfluence(this.requireProjectId(), payload).subscribe({
+      next: ({ data }) => {
+        this.confluenceSuccess.set(`Sync queued for ${data.spaces_queued} space(s).`);
+        this.loadDocuments();
+        this.loadProjectConfluenceSpaces();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.confluenceError.set(error.error?.message ?? 'Failed to queue Confluence sync.');
+      },
+      complete: () => this.isConfluenceSyncing.set(false),
+    });
+  }
+
+  private loadConfluenceContext(): void {
+    const projectId = this.requireProjectId();
+
+    this.api.listProjects().subscribe({
+      next: ({ data }) => {
+        const project = data.find((item) => item.id === projectId);
+        this.projectTenantId.set(project?.tenant_id ?? null);
+      },
+    });
+
+    this.loadProjectConfluenceSpaces();
+  }
+
+  private loadProjectConfluenceSpaces(): void {
+    this.api.listProjectConfluenceSpaces(this.requireProjectId()).subscribe({
+      next: ({ data }) => {
+        this.selectedProjectSpaces.set(data);
+
+        if (!this.confluenceConnectionId() && data.length > 0) {
+          this.confluenceConnectionId.set(data[0].atlassian_connection_id);
+        }
+
+        this.selectedSpaceKeys.set(new Set(data.map((item) => item.space_key)));
+      },
     });
   }
 

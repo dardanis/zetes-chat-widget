@@ -56,6 +56,40 @@ export interface CrawledUrl {
   updated_at?: string | null;
 }
 
+export interface AtlassianConnection {
+  id: number;
+  tenant_id: number;
+  created_by: number;
+  base_url: string;
+  email: string;
+  cloud_id?: string | null;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ConfluenceSpace {
+  id?: string | null;
+  key: string;
+  name: string;
+  type?: string;
+}
+
+export interface ProjectConfluenceSpace {
+  id: number;
+  tenant_id: number;
+  project_id: number;
+  atlassian_connection_id: number;
+  space_id?: string | null;
+  space_key: string;
+  space_name: string;
+  space_type: string;
+  is_enabled: boolean;
+  last_synced_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ChatSession {
   id: number;
   tenant_id: number;
@@ -178,6 +212,38 @@ export class RagApiService {
 
   listCrawledUrls(projectId: number): Observable<ApiListResponse<CrawledUrl>> {
     return this.http.get<ApiListResponse<CrawledUrl>>(`/api/projects/${projectId}/crawled-urls`);
+  }
+
+  createConfluenceConnection(
+    tenantId: number,
+    payload: { base_url: string; email: string; api_token: string; cloud_id?: string | null }
+  ): Observable<ApiItemResponse<AtlassianConnection>> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.post<ApiItemResponse<AtlassianConnection>>(`/api/tenants/${tenantId}/confluence/connections`, payload))
+    );
+  }
+
+  listConfluenceSpaces(tenantId: number, connectionId: number): Observable<ApiListResponse<ConfluenceSpace>> {
+    return this.http.get<ApiListResponse<ConfluenceSpace>>(`/api/tenants/${tenantId}/confluence/connections/${connectionId}/spaces`);
+  }
+
+  listProjectConfluenceSpaces(projectId: number): Observable<ApiListResponse<ProjectConfluenceSpace>> {
+    return this.http.get<ApiListResponse<ProjectConfluenceSpace>>(`/api/projects/${projectId}/confluence/spaces`);
+  }
+
+  saveProjectConfluenceSpaces(
+    projectId: number,
+    payload: { connection_id: number; spaces: ConfluenceSpace[] }
+  ): Observable<ApiListResponse<ProjectConfluenceSpace>> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.put<ApiListResponse<ProjectConfluenceSpace>>(`/api/projects/${projectId}/confluence/spaces`, payload))
+    );
+  }
+
+  syncProjectConfluence(projectId: number, payload?: { connection_id?: number | null }): Observable<{ message: string; data: { spaces_queued: number } }> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.post<{ message: string; data: { spaces_queued: number } }>(`/api/projects/${projectId}/confluence/sync`, payload ?? {}))
+    );
   }
 
   listChats(projectId: number): Observable<ApiListResponse<ChatSession>> {

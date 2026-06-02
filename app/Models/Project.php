@@ -31,5 +31,9 @@ class Project extends Model
     {
         return $this->hasMany(ChatSession::class);
     }
-}
 
+    public function confluenceSpaces(): HasMany
+    {
+        return $this->hasMany(ProjectConfluenceSpace::class);
+    }
+}

@@ -19,18 +19,57 @@
 - Queue/cache/session persistence is DB-backed by default, so schema migrations are required before using those features.
 
 ## Project Conventions to Follow
-- Prefer framework defaults unless a clear repo-specific need appears (this repo is close to stock Laravel 13).
-- For model properties, follow existing Laravel 13 attribute style in `app/Models/User.php`.
-- Keep frontend entrypoints at `resources/css/app.css` and `resources/js/app.js` so Vite config remains valid.
-- Tailwind source scanning already includes Blade, JS, and compiled framework views (`resources/css/app.css` `@source` directives).
+
+### Model Patterns
+- **Relationships**: Use `BelongsTo`, `HasMany`, `BelongsToMany` with `withPivot()` and `withTimestamps()` for junction tables (e.g., tenant-user membership with role).
+- **Fillable/Hidden**: Use traditional `$fillable`/`$hidden` (not PHP 8.x attributes) for broad compatibility.
+- **Casts**: Use `protected function casts()` method for type safety (e.g., JSON metadata as `array`).
+- **Scoping**: Always include `tenant_id` and `project_id` in queries that touch sensitive data; use model scopes or explicit WHERE clauses.
+
+### RAG Service Layer
+- Services live under `app/Services/Rag/` and encapsulate domain logic (chunking, retrieval, embedding, generation, web crawling).
+- Each service is responsible for a single concern (e.g., `DocumentChunkingService` handles text chunking; `OllamaEmbeddingService` calls the Ollama API).
+- Services receive configuration from `config/rag.php` via dependency injection or direct config access.
+- Errors in services (e.g., Ollama timeouts) should be caught and gracefully degraded or re-queued.
+
+### Controller/Endpoint Patterns
+- **Authenticated Controllers** (TenantController, ProjectController, etc.): Check user's tenant membership via `$user->tenants()` before returning tenant data.
+- **Public Widget Controllers** (WidgetChatController): Use middleware (`widget.request`) to validate secret + origin; do not require user authentication.
+- **Closure vs. Class-based**: Prefer class-based controllers under `app/Http/Controllers/` for clarity and testability.
+
+### Job Patterns
+- Queued jobs (ProcessProjectDocumentJob, EmbedDocumentChunkJob, CrawlProjectWebsiteJob) should:
+  - Accept minimal data in constructor (IDs, not full models, to avoid serialization issues).
+  - Retrieve models in `handle()` to ensure fresh state.
+  - Include explicit error handling (fail with backoff or DLQ strategy).
+  - Log progress and failures for debugging.
+
+### Middleware
+- `ValidateWidgetRequest.php`: Confirms widget secret hash matches, origin is allowlisted, and session token is valid.
+- Apply widget middleware only to public endpoints; use standard `auth:sanctum` for authenticated routes.
+
+### Frontend Conventions
+- **Main App**: Vite entrypoints are `resources/css/app.css` and `resources/js/app.js`; Tailwind config includes Blade, JS, and framework view paths.
+- **Admin UI**: `frontend/` directory contains Angular app with separate TypeScript config; build outputs go to `public/ng/`.
+- **Embeddable Widget**: `public/widget/` contains the compiled chat widget (built separately, likely from `frontend/` sources); embed via script tag with `widgetKey` and `X-Widget-Secret`.
+
+### Priority File Edits
+- Model changes: update migration + model + factory (if applicable).
+- API changes: update controller + route + tests.
+- RAG logic: update service + jobs + events as needed.
+- Widget security: test both with correct and incorrect secrets/origins in feature tests.
 
 ## Workflows (use these exact commands)
-- Initial bootstrap: `composer run setup`
-- Daily dev stack (server + queue listener + logs + Vite): `composer run dev`
-- Tests (clears config first): `composer test`
+- Initial bootstrap: `composer run setup` (installs deps, generates key, runs migrations, builds frontend).
+- Daily dev stack (server + queue listener + logs + Vite): `composer run dev` (runs concurrently; watch for job failures in the logs pane).
+- Tests (clears config first): `composer test`.
 - Fast route/config sanity checks:
-  - `php artisan route:list`
-  - `php artisan about`
+  - `php artisan route:list` (shows all API routes).
+  - `php artisan about` (shows environment + config summary).
+- RAG-specific checks:
+  - Verify Ollama is running on `OLLAMA_BASE_URL` (default `http://localhost:11434`).
+  - Check `.env` for RAG_* variables (chunking, retrieval, crawler, widget settings).
+  - Monitor queue with `php artisan queue:listen` to see ingestion/embedding jobs in real time.
 
 ## Testing Expectations
 - Feature tests belong in `tests/Feature` (HTTP flows); unit tests in `tests/Unit`.

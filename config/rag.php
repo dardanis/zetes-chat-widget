@@ -30,5 +30,10 @@ return [
         'generation_model' => env('OLLAMA_GENERATION_MODEL', 'llama3'),
         'timeout' => (int) env('OLLAMA_TIMEOUT_SECONDS', 120),
     ],
-];
 
+    'confluence' => [
+        'request_timeout_seconds' => (int) env('RAG_CONFLUENCE_REQUEST_TIMEOUT_SECONDS', 20),
+        'max_spaces_per_request' => (int) env('RAG_CONFLUENCE_MAX_SPACES_PER_REQUEST', 500),
+        'max_pages_per_sync' => (int) env('RAG_CONFLUENCE_MAX_PAGES_PER_SYNC', 200),
+    ],
+];

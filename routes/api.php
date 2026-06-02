@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 // COMMENTED: registration disabled
 // use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\ConfluenceIntegrationController;
 use App\Http\Controllers\ProjectChatController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectDocumentController;
@@ -46,4 +47,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/projects/{project}/chats', [ProjectChatController::class, 'createSession']);
     Route::post('/projects/{project}/chats/message', [ProjectChatController::class, 'sendMessage']);
     Route::get('/projects/{project}/chats/{chat}/history', [ProjectChatController::class, 'history']);
+
+    Route::post('/tenants/{tenant}/confluence/connections', [ConfluenceIntegrationController::class, 'storeConnection']);
+    Route::get('/tenants/{tenant}/confluence/connections/{connection}/spaces', [ConfluenceIntegrationController::class, 'listSpaces']);
+
+    Route::get('/projects/{project}/confluence/spaces', [ConfluenceIntegrationController::class, 'indexProjectSpaces']);
+    Route::put('/projects/{project}/confluence/spaces', [ConfluenceIntegrationController::class, 'updateProjectSpaces']);
+    Route::post('/projects/{project}/confluence/sync', [ConfluenceIntegrationController::class, 'syncProjectSpaces']);
 });
