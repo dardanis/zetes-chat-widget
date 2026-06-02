@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -7,7 +8,7 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
 @Component({
   selector: 'app-project-documents-page',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   template: `
     <section class="space-y-6">
       <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-2">
@@ -202,7 +203,7 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
             <p class="text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Existing connections</p>
             <button
               type="button"
-              (click)="showConfluenceForm.update(v => !v)"
+              (click)="showConfluenceForm.set(!showConfluenceForm())"
               class="rounded-lg border border-[var(--app-border)] px-3 py-1.5 text-xs font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]"
             >
               + New connection
@@ -378,7 +379,7 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
                   <p class="text-sm font-medium text-[var(--app-text)]">{{ space.space_name }}</p>
                   <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">{{ space.space_key }} - {{ space.space_type }}</p>
                   @if (space.last_synced_at) {
-                    <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">Last sync: {{ space.last_synced_at }}</p>
+                    <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">Last sync: {{ space.last_synced_at | date:'MMM d, y, h:mm a' }}</p>
                   }
                 </div>
               }
@@ -388,7 +389,7 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
       </div>
       }
 
-      <div>
+      <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
         <div class="mb-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-sm">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h3 class="text-sm font-semibold text-[var(--app-text)]">Documents ({{ documentsTotal() }})</h3>
@@ -870,15 +871,6 @@ export class ProjectDocumentsPageComponent implements OnInit {
     this.loadConfluenceSpaces();
   }
 
-  protected goToConfluenceSpacesPage(page: number): void {
-    if (page < 1 || page > this.confluenceSpacesTotalPages()) {
-      return;
-    }
-
-    this.confluenceSpacesPage.set(page);
-    this.loadConfluenceSpaces();
-  }
-
   protected isSpaceSelected(spaceKey: string): boolean {
     return this.selectedSpaceKeys().has(spaceKey);
   }
@@ -1016,9 +1008,6 @@ export class ProjectDocumentsPageComponent implements OnInit {
     return this.crawledUrlsLastPage();
   }
 
-  protected confluenceSpacesTotalPages(): number {
-    return this.confluenceSpacesLastPage();
-  }
 
   private applyPaginationMeta(
     meta: PaginationMeta,
