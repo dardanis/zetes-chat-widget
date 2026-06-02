@@ -198,10 +198,19 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
         }
 
         <div class="mt-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3">
-          <p class="text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Existing connections</p>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Existing connections</p>
+            <button
+              type="button"
+              (click)="showConfluenceForm.update(v => !v)"
+              class="rounded-lg border border-[var(--app-border)] px-3 py-1.5 text-xs font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]"
+            >
+              + New connection
+            </button>
+          </div>
 
           @if (confluenceConnections().length === 0) {
-            <p class="mt-2 text-xs text-[var(--app-text-muted)]">No saved Confluence connections yet. Create one below.</p>
+            <p class="mt-2 text-xs text-[var(--app-text-muted)]">No saved Confluence connections yet.</p>
           } @else {
             <div class="mt-2 flex flex-col gap-2 sm:flex-row">
               <select
@@ -209,7 +218,7 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
                 [ngModel]="confluenceConnectionId()"
                 (ngModelChange)="onConfluenceConnectionSelected($event)"
               >
-                <option [ngValue]="null">Select an existing connection</option>
+                <option [ngValue]="null">Select a connection</option>
                 @for (connection of confluenceConnections(); track connection.id) {
                   <option [ngValue]="connection.id">#{{ connection.id }} - {{ connection.email }} - {{ connection.base_url }}</option>
                 }
@@ -227,81 +236,66 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
           }
         </div>
 
-        <p class="mt-3 text-xs text-[var(--app-text-muted)]">Create another connection (optional):</p>
+        @if (showConfluenceForm()) {
+        <div class="mt-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-4">
+          <h4 class="text-sm font-semibold text-[var(--app-text)]">Create connection</h4>
+          <div class="mt-3 grid gap-2 sm:grid-cols-2">
+            <input
+              type="url"
+              [(ngModel)]="confluenceBaseUrl"
+              placeholder="https://your-site.atlassian.net"
+              class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
+            />
+            <input
+              type="email"
+              [(ngModel)]="confluenceEmail"
+              placeholder="you@company.com"
+              class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
+            />
+            <input
+              type="password"
+              [(ngModel)]="confluenceApiToken"
+              placeholder="Atlassian API token"
+              class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
+            />
+            <input
+              type="text"
+              [(ngModel)]="confluenceCloudId"
+              placeholder="Cloud ID (optional)"
+              class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
+            />
+          </div>
 
-        <div class="mt-4 grid gap-2 sm:grid-cols-2">
-          <input
-            type="url"
-            [(ngModel)]="confluenceBaseUrl"
-            placeholder="https://your-site.atlassian.net"
-            class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
-          />
-          <input
-            type="email"
-            [(ngModel)]="confluenceEmail"
-            placeholder="you@company.com"
-            class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
-          />
-          <input
-            type="password"
-            [(ngModel)]="confluenceApiToken"
-            placeholder="Atlassian API token"
-            class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
-          />
-          <input
-            type="text"
-            [(ngModel)]="confluenceCloudId"
-            placeholder="Cloud ID (optional)"
-            class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
-          />
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              (click)="connectAndLoadConfluenceSpaces()"
+              [disabled]="isConfluenceConnecting() || !canConnectConfluence()"
+              class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+            >
+              {{ isConfluenceConnecting() ? 'Connecting...' : 'Connect + load spaces' }}
+            </button>
+
+            <button
+              type="button"
+              (click)="showConfluenceForm.set(false)"
+              class="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
-
-        <div class="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            (click)="connectAndLoadConfluenceSpaces()"
-            [disabled]="isConfluenceConnecting() || !canConnectConfluence()"
-            class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-          >
-            {{ isConfluenceConnecting() ? 'Connecting...' : 'Connect + load spaces' }}
-          </button>
-
-          <button
-            type="button"
-            (click)="loadConfluenceSpaces()"
-            [disabled]="isConfluenceLoadingSpaces() || !confluenceConnectionId() || !projectTenantId()"
-            class="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)] disabled:opacity-60"
-          >
-            {{ isConfluenceLoadingSpaces() ? 'Loading...' : 'Refresh spaces' }}
-          </button>
-        </div>
+        }
 
         @if (confluenceConnectionId()) {
           <div class="mt-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3 shadow-sm">
+            @if (isConfluenceLoadingSpaces() || availableConfluenceSpaces().length > 0) {
             <div class="mb-2 flex items-center justify-between">
               <p class="text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Available spaces</p>
               <span class="text-xs text-[var(--app-text-muted)]">{{ selectedSpaceKeys().size }} selected</span>
             </div>
 
-            <div class="mb-2 grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-center">
-              <input
-                type="text"
-                [ngModel]="confluenceSpacesSearchQuery()"
-                (ngModelChange)="onConfluenceSpacesSearchChange($event)"
-                placeholder="Search spaces by name or key"
-                class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2"
-              />
-
-              <select
-                [ngModel]="confluenceSpacesPerPage()"
-                (ngModelChange)="setConfluenceSpacesPerPage($event)"
-                class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-2 text-sm text-[var(--app-text)]"
-              >
-                @for (size of pageSizeOptions; track size) {
-                  <option [ngValue]="size">{{ size }}/page</option>
-                }
-              </select>
-
+            <div class="mb-2 flex gap-2 sm:items-center">
               <label class="inline-flex items-center gap-2 text-xs text-[var(--app-text-muted)]">
                 <input
                   type="checkbox"
@@ -309,13 +303,18 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
                   (change)="toggleSelectAllMatchingConfluenceSpaces($event)"
                   [disabled]="isConfluenceSelectingAll()"
                 />
-                {{ isConfluenceSelectingAll() ? 'Selecting...' : 'Select all matching' }}
+                {{ isConfluenceSelectingAll() ? 'Selecting...' : 'Select all' }}
               </label>
             </div>
+            }
 
             <div class="max-h-56 space-y-2 overflow-auto pr-1">
               @if (availableConfluenceSpaces().length === 0) {
-                <p class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-xs text-[var(--app-text-muted)]">No spaces match your search.</p>
+                @if (isConfluenceLoadingSpaces()) {
+                  <p class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-xs text-[var(--app-text-muted)]">Loading spaces...</p>
+                } @else {
+                  <p class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-xs text-[var(--app-text-muted)]">No spaces available.</p>
+                }
               } @else {
                 @for (space of availableConfluenceSpaces(); track space.key) {
                   <label class="flex cursor-pointer items-start gap-3 rounded-md border border-transparent px-2 py-1.5 hover:border-[var(--app-border)] hover:bg-[var(--app-surface)]">
@@ -334,55 +333,45 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
               }
             </div>
 
-            @if (confluenceSpacesTotalPages() > 1) {
-              <div class="mt-3 flex items-center justify-between">
-                <p class="text-xs text-[var(--app-text-muted)]">Page {{ confluenceSpacesPage() }} of {{ confluenceSpacesTotalPages() }} ({{ confluenceSpacesTotal() }} total)</p>
-                <div class="flex items-center gap-2">
-                  <button
-                    type="button"
-                    (click)="goToConfluenceSpacesPage(confluenceSpacesPage() - 1)"
-                    [disabled]="confluenceSpacesPage() <= 1"
-                    class="rounded-md border border-[var(--app-border)] px-2 py-1 text-xs text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-50"
-                  >
-                    Prev
-                  </button>
-                  <button
-                    type="button"
-                    (click)="goToConfluenceSpacesPage(confluenceSpacesPage() + 1)"
-                    [disabled]="confluenceSpacesPage() >= confluenceSpacesTotalPages()"
-                    class="rounded-md border border-[var(--app-border)] px-2 py-1 text-xs text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            }
+             <div class="mt-3 flex flex-wrap gap-2">
+               <button
+                 type="button"
+                 (click)="saveSelectedConfluenceSpaces()"
+                 [disabled]="isConfluenceSavingSpaces() || !confluenceConnectionId()"
+                 class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+               >
+                 {{ isConfluenceSavingSpaces() ? 'Saving...' : 'Save selected spaces' }}
+               </button>
 
-            <div class="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                (click)="saveSelectedConfluenceSpaces()"
-                [disabled]="isConfluenceSavingSpaces() || !confluenceConnectionId()"
-                class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-              >
-                {{ isConfluenceSavingSpaces() ? 'Saving...' : 'Save selected spaces' }}
-              </button>
-
-              <button
-                type="button"
-                (click)="syncConfluenceSpaces()"
-                [disabled]="isConfluenceSyncing() || selectedProjectSpaces().length === 0"
-                class="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-60"
-              >
-                {{ isConfluenceSyncing() ? 'Queueing...' : 'Sync now' }}
-              </button>
-            </div>
-          </div>
-        }
+               <button
+                 type="button"
+                 (click)="syncConfluenceSpaces()"
+                 [disabled]="isConfluenceSyncing() || selectedProjectSpaces().length === 0"
+                 class="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] disabled:opacity-60"
+               >
+                 {{ isConfluenceSyncing() ? 'Queueing...' : 'Sync now' }}
+               </button>
+             </div>
+           </div>
+         }
 
         @if (selectedProjectSpaces().length > 0) {
           <div class="mt-4">
-            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Saved for this project</p>
+            <div class="mb-2 flex items-center justify-between">
+              <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">Saved for this project</p>
+              <div class="flex items-center gap-2">
+                <label class="text-xs text-[var(--app-text-muted)]">Page size</label>
+                <select
+                  [ngModel]="confluenceSpacesPerPage()"
+                  (ngModelChange)="setConfluenceSpacesPerPage($event)"
+                  class="rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-xs text-[var(--app-text)]"
+                >
+                  @for (size of pageSizeOptions; track size) {
+                    <option [ngValue]="size">{{ size }}</option>
+                  }
+                </select>
+              </div>
+            </div>
             <div class="space-y-2">
               @for (space of selectedProjectSpaces(); track space.id) {
                 <div class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2">
@@ -566,21 +555,21 @@ export class ProjectDocumentsPageComponent implements OnInit {
   protected readonly isCrawling = signal(false);
   protected readonly crawlError = signal('');
   protected crawlUrl = '';
-  protected readonly activeIngestionTab = signal<'upload' | 'crawler' | 'confluence'>('upload');
-  protected readonly documentsPage = signal(1);
-  protected readonly documentsPerPage = signal(10);
-  protected readonly documentsTotal = signal(0);
-  protected readonly documentsLastPage = signal(1);
-  protected readonly crawledUrlsPage = signal(1);
-  protected readonly crawledUrlsPerPage = signal(10);
-  protected readonly crawledUrlsTotal = signal(0);
-  protected readonly crawledUrlsLastPage = signal(1);
-  protected readonly confluenceSpacesPage = signal(1);
-  protected readonly confluenceSpacesPerPage = signal(10);
-  protected readonly confluenceSpacesTotal = signal(0);
-  protected readonly confluenceSpacesLastPage = signal(1);
-  protected readonly confluenceSpacesSearchQuery = signal('');
-  protected readonly projectTenantId = signal<number | null>(null);
+   protected readonly activeIngestionTab = signal<'upload' | 'crawler' | 'confluence'>('upload');
+   protected readonly documentsPage = signal(1);
+   protected readonly documentsPerPage = signal(10);
+   protected readonly documentsTotal = signal(0);
+   protected readonly documentsLastPage = signal(1);
+   protected readonly crawledUrlsPage = signal(1);
+   protected readonly crawledUrlsPerPage = signal(10);
+   protected readonly crawledUrlsTotal = signal(0);
+   protected readonly crawledUrlsLastPage = signal(1);
+   protected readonly confluenceSpacesPage = signal(1);
+   protected readonly confluenceSpacesPerPage = signal(10);
+   protected readonly confluenceSpacesTotal = signal(0);
+   protected readonly confluenceSpacesLastPage = signal(1);
+   protected readonly projectTenantId = signal<number | null>(null);
+   protected readonly showConfluenceForm = signal(false);
   protected readonly confluenceConnections = signal<AtlassianConnection[]>([]);
   protected readonly confluenceConnectionId = signal<number | null>(null);
   protected readonly availableConfluenceSpaces = signal<ConfluenceSpace[]>([]);
@@ -744,61 +733,52 @@ export class ProjectDocumentsPageComponent implements OnInit {
     });
   }
 
-  protected loadConfluenceSpaces(): void {
-    const tenantId = this.projectTenantId();
-    const connectionId = this.confluenceConnectionId();
+   protected loadConfluenceSpaces(): void {
+     const tenantId = this.projectTenantId();
+     const connectionId = this.confluenceConnectionId();
 
-    if (!tenantId || !connectionId) {
-      return;
-    }
+     if (!tenantId || !connectionId) {
+       return;
+     }
 
-    this.isConfluenceLoadingSpaces.set(true);
-    this.confluenceError.set('');
+     this.isConfluenceLoadingSpaces.set(true);
+     this.confluenceError.set('');
 
-    this.api.listConfluenceSpaces(tenantId, connectionId, {
-      page: this.confluenceSpacesPage(),
-      per_page: this.confluenceSpacesPerPage(),
-      q: this.confluenceSpacesSearchQuery(),
-    }).subscribe({
-      next: ({ data, meta }) => {
-        this.availableConfluenceSpaces.set(data);
-        this.applyPaginationMeta(meta, this.confluenceSpacesPage, this.confluenceSpacesPerPage, this.confluenceSpacesTotal, this.confluenceSpacesLastPage);
-        this.mergeConfluenceSpacesIntoLookup(data);
-      },
-      error: (error: HttpErrorResponse) => {
-        this.confluenceError.set(error.error?.message ?? 'Failed to load Confluence spaces.');
-      },
-      complete: () => this.isConfluenceLoadingSpaces.set(false),
-    });
-  }
+     this.api.listConfluenceSpaces(tenantId, connectionId, {
+       page: this.confluenceSpacesPage(),
+       per_page: this.confluenceSpacesPerPage(),
+     }).subscribe({
+       next: ({ data, meta }) => {
+         this.availableConfluenceSpaces.set(data);
+         this.applyPaginationMeta(meta, this.confluenceSpacesPage, this.confluenceSpacesPerPage, this.confluenceSpacesTotal, this.confluenceSpacesLastPage);
+         this.mergeConfluenceSpacesIntoLookup(data);
+       },
+       error: (error: HttpErrorResponse) => {
+         this.confluenceError.set(error.error?.message ?? 'Failed to load Confluence spaces.');
+       },
+       complete: () => this.isConfluenceLoadingSpaces.set(false),
+     });
+   }
 
-  protected onConfluenceConnectionSelected(value: string | number | null): void {
-    const normalized = Number(value);
+   protected onConfluenceConnectionSelected(value: string | number | null): void {
+     const normalized = Number(value);
 
-    if (!Number.isFinite(normalized) || normalized <= 0) {
-      this.confluenceConnectionId.set(null);
-      this.availableConfluenceSpaces.set([]);
-      this.confluenceSpaceLookup.set(new Map());
-      this.confluenceSpacesSearchQuery.set('');
-      this.confluenceSpacesPage.set(1);
+     if (!Number.isFinite(normalized) || normalized <= 0) {
+       this.confluenceConnectionId.set(null);
+       this.availableConfluenceSpaces.set([]);
+       this.confluenceSpaceLookup.set(new Map());
+       this.confluenceSpacesPage.set(1);
 
-      return;
-    }
+       return;
+     }
 
-    this.confluenceConnectionId.set(normalized);
-    this.confluenceSuccess.set('');
-    this.confluenceError.set('');
-    this.availableConfluenceSpaces.set([]);
-    this.confluenceSpaceLookup.set(new Map());
-    this.confluenceSpacesSearchQuery.set('');
-    this.confluenceSpacesPage.set(1);
-  }
-
-  protected onConfluenceSpacesSearchChange(value: string): void {
-    this.confluenceSpacesSearchQuery.set(value);
-    this.confluenceSpacesPage.set(1);
-    this.loadConfluenceSpaces();
-  }
+     this.confluenceConnectionId.set(normalized);
+     this.confluenceSuccess.set('');
+     this.confluenceError.set('');
+     this.availableConfluenceSpaces.set([]);
+     this.confluenceSpaceLookup.set(new Map());
+     this.confluenceSpacesPage.set(1);
+   }
 
   protected areAllVisibleConfluenceSpacesSelected(): boolean {
     const visibleSpaces = this.availableConfluenceSpaces();
@@ -812,48 +792,47 @@ export class ProjectDocumentsPageComponent implements OnInit {
     return visibleSpaces.every((space) => selectedKeys.has(space.key));
   }
 
-  protected toggleSelectAllMatchingConfluenceSpaces(event: Event): void {
-    const tenantId = this.projectTenantId();
-    const connectionId = this.confluenceConnectionId();
+   protected toggleSelectAllMatchingConfluenceSpaces(event: Event): void {
+     const tenantId = this.projectTenantId();
+     const connectionId = this.confluenceConnectionId();
 
-    if (!tenantId || !connectionId) {
-      return;
-    }
+     if (!tenantId || !connectionId) {
+       return;
+     }
 
-    const checked = (event.target as HTMLInputElement).checked;
-    this.isConfluenceSelectingAll.set(true);
-    this.confluenceError.set('');
+     const checked = (event.target as HTMLInputElement).checked;
+     this.isConfluenceSelectingAll.set(true);
+     this.confluenceError.set('');
 
-    this.api.listConfluenceSpaces(tenantId, connectionId, {
-      page: 1,
-      per_page: 100,
-      q: this.confluenceSpacesSearchQuery(),
-      all: true,
-    }).subscribe({
-      next: ({ data }) => {
-        const keys = data.map((space) => space.key);
-        this.mergeConfluenceSpacesIntoLookup(data);
+     this.api.listConfluenceSpaces(tenantId, connectionId, {
+       page: 1,
+       per_page: 100,
+       all: true,
+     }).subscribe({
+       next: ({ data }) => {
+         const keys = data.map((space) => space.key);
+         this.mergeConfluenceSpacesIntoLookup(data);
 
-        this.selectedSpaceKeys.update((current) => {
-          const next = new Set(current);
+         this.selectedSpaceKeys.update((current) => {
+           const next = new Set(current);
 
-          for (const key of keys) {
-            if (checked) {
-              next.add(key);
-            } else {
-              next.delete(key);
-            }
-          }
+           for (const key of keys) {
+             if (checked) {
+               next.add(key);
+             } else {
+               next.delete(key);
+             }
+           }
 
-          return next;
-        });
-      },
-      error: (error: HttpErrorResponse) => {
-        this.confluenceError.set(error.error?.message ?? 'Failed to select all matching spaces.');
-      },
-      complete: () => this.isConfluenceSelectingAll.set(false),
-    });
-  }
+           return next;
+         });
+       },
+       error: (error: HttpErrorResponse) => {
+         this.confluenceError.set(error.error?.message ?? 'Failed to select all spaces.');
+       },
+       complete: () => this.isConfluenceSelectingAll.set(false),
+     });
+   }
 
   protected setDocumentsPerPage(value: number): void {
     this.documentsPerPage.set(Number(value));
