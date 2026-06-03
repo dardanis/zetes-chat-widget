@@ -13,6 +13,9 @@ jobs:
       - name: Deploy to C:\chat
         shell: powershell
         run: |
+          # Add Git to PATH
+          $env:PATH = "C:\Program Files\Git\cmd;$env:PATH"
+
           $deployPath = "C:\chat"
           Write-Host "Deploying to $deployPath..."
 
