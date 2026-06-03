@@ -24,6 +24,10 @@ jobs:
 
           Write-Host "Installing PHP dependencies..."
           composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Lock file outdated - running composer update to sync..."
+            composer update --no-interaction --prefer-dist --no-dev --optimize-autoloader
+          }
 
           Write-Host "Building root frontend / Vite..."
           npm ci
