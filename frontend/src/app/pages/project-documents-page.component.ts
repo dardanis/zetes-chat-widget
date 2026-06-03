@@ -748,6 +748,7 @@ export class ProjectDocumentsPageComponent implements OnInit {
      this.api.listConfluenceSpaces(tenantId, connectionId, {
        page: this.confluenceSpacesPage(),
        per_page: this.confluenceSpacesPerPage(),
+       all: true,
      }).subscribe({
        next: ({ data, meta }) => {
          this.availableConfluenceSpaces.set(data);
