@@ -1,114 +1,50 @@
-name: CI - Self Hosted Windows
+name: Deploy - Self Hosted Windows
 
 on:
   push:
     branches:
       - main
-      - develop
-  pull_request:
 
 jobs:
-  build:
-    runs-on: [self-hosted, windows, X64]
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Show runner info
-        shell: powershell
-        run: |
-          php -v
-          composer --version
-          node -v
-          npm -v
-
-      - name: Install PHP dependencies
-        shell: powershell
-        run: |
-          composer install --no-interaction --prefer-dist
-
-      - name: Install root Node dependencies
-        shell: powershell
-        run: npm ci
-
-      - name: Build root Vite assets
-        shell: powershell
-        run: npm run build
-
-      - name: Install Angular dependencies
-        shell: powershell
-        working-directory: frontend
-        run: npm ci
-
-      - name: Build Angular app + widget
-        shell: powershell
-        working-directory: frontend
-        run: npm run build:all
-
-      - name: Verify build (no tests - using lint checks)
-        shell: powershell
-        run: |
-          Write-Host "✓ All builds completed successfully"
-
   deploy:
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: [self-hosted, windows]
+    runs-on: [self-hosted, windows, x64]
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Deploy to C:\chat
         shell: powershell
         run: |
           $deployPath = "C:\chat"
           Write-Host "Deploying to $deployPath..."
 
-          # Change to project directory
           Set-Location $deployPath
 
-          # Pull latest code
-          Write-Host "Pulling latest code..."
-          git fetch origin
-          git pull origin main
+          Write-Host "Updating code..."
+          git fetch origin main
+          git reset --hard origin/main
 
-          # Install dependencies (no-dev for production)
           Write-Host "Installing PHP dependencies..."
           composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
 
-          # Build frontend
-          Write-Host "Building frontend (Vite)..."
-          npm ci --omit=dev
+          Write-Host "Building root frontend / Vite..."
+          npm ci
           npm run build
 
-          # Build Angular
-          Write-Host "Building Angular app + widget..."
+          Write-Host "Building Angular frontend..."
           Set-Location frontend
-          npm ci --omit=dev
+          npm ci
           npm run build:all
           Set-Location ..
 
-          # Run migrations
           Write-Host "Running database migrations..."
           php artisan migrate --force
 
-          # Clear caches
-          Write-Host "Clearing caches..."
+          Write-Host "Clearing Laravel cache..."
           php artisan config:clear
           php artisan cache:clear
+          php artisan route:clear
+          php artisan view:clear
+
+          Write-Host "Optimizing Laravel..."
           php artisan optimize
 
-          Write-Host "✓ Deployment completed successfully!"
-
-      - name: Verify deployment
-        shell: powershell
-        run: |
-          $deployPath = "C:\chat"
-          Set-Location $deployPath
-          Write-Host "Checking deployment health..."
-          php artisan about
-
-
-
+          Write-Host "Deployment completed successfully."
