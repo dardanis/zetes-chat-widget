@@ -22,12 +22,7 @@ class ContextRetrievalService
         $query = DocumentChunk::query()
             ->with('projectDocument:id,original_name,ingestion_type')
             ->where('tenant_id', $project->tenant_id)
-            ->where('project_id', $project->id)
-            ->when($preferConfluence, static function ($query): void {
-                $query->whereHas('projectDocument', static function ($subQuery): void {
-                    $subQuery->where('ingestion_type', 'confluence');
-                });
-            });
+            ->where('project_id', $project->id);
 
         if (DB::getDriverName() === 'pgsql' && $queryEmbedding !== []) {
             $vector = '['.implode(',', array_map(static fn (float $value): string => (string) $value, $queryEmbedding)).']';
