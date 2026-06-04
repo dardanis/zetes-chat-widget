@@ -389,10 +389,28 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
       </div>
       }
 
-      <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
-        <div class="mb-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-sm">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <h3 class="text-sm font-semibold text-[var(--app-text)]">Documents ({{ documentsTotal() }})</h3>
+       <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
+         <div class="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-[var(--app-border)]/50 bg-[var(--app-surface-2)]/40 px-3 py-2">
+           <span class="text-xs font-medium text-[var(--app-text-muted)]">Status:</span>
+           <div class="flex flex-wrap gap-3">
+             <div class="flex items-center gap-1.5">
+               <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+               <span class="text-xs text-[var(--app-text-muted)]">Indexed</span>
+             </div>
+             <div class="flex items-center gap-1.5">
+               <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+               <span class="text-xs text-[var(--app-text-muted)]">Queued</span>
+             </div>
+             <div class="flex items-center gap-1.5">
+               <span class="h-2 w-2 rounded-full bg-[var(--app-danger)]"></span>
+               <span class="text-xs text-[var(--app-text-muted)]">Error/Outdated</span>
+             </div>
+           </div>
+         </div>
+
+         <div class="mb-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-sm">
+           <div class="flex flex-wrap items-center justify-between gap-2">
+             <h3 class="text-sm font-semibold text-[var(--app-text)]">Documents ({{ documentsTotal() }})</h3>
             <div class="flex items-center gap-2">
               <label class="text-xs text-[var(--app-text-muted)]">Page size</label>
               <select
