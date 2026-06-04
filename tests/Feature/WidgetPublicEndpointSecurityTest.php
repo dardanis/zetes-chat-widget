@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ChatSession;
 use App\Models\Project;
 use App\Models\Tenant;
 use App\Models\User;
@@ -60,6 +61,33 @@ class WidgetPublicEndpointSecurityTest extends TestCase
             ->assertStatus(429);
     }
 
+    public function test_widget_session_stores_email_from_user_token_and_request_time(): void
+    {
+        $project = $this->createProjectWithSecret('token-secret');
+        $jwt = $this->fakeJwt([
+            'sub' => 'user-123',
+            'email' => 'visitor@example.com',
+            'name' => 'Widget Visitor',
+        ]);
+
+        $response = $this->withHeaders($this->widgetHeaders('token-secret'))
+            ->postJson('/api/widget/'.$project->widget_key.'/chats', [
+                'title' => 'Widget chat',
+                'user_token' => $jwt,
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.metadata.widget_user.email', 'visitor@example.com')
+            ->assertJsonPath('data.metadata.widget_user.token_present', true);
+
+        $session = ChatSession::query()->findOrFail($response->json('data.id'));
+
+        $this->assertSame('visitor@example.com', data_get($session->metadata, 'widget_user.email'));
+        $this->assertTrue((bool) data_get($session->metadata, 'widget_user.token_present'));
+        $this->assertSame('user-123', data_get($session->metadata, 'widget_user.subject'));
+        $this->assertNotNull(data_get($session->metadata, 'widget_last_request_at'));
+    }
+
     private function createProjectWithSecret(string $plainSecret = 'secret-123'): Project
     {
         $owner = User::factory()->create();
@@ -87,6 +115,18 @@ class WidgetPublicEndpointSecurityTest extends TestCase
             'X-Widget-Secret' => $secret,
             'Accept' => 'application/json',
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $claims
+     */
+    private function fakeJwt(array $claims): string
+    {
+        $encode = static function (array $payload): string {
+            return rtrim(strtr(base64_encode((string) json_encode($payload, JSON_THROW_ON_ERROR)), '+/', '-_'), '=');
+        };
+
+        return $encode(['alg' => 'HS256', 'typ' => 'JWT']).'.'.$encode($claims).'.signature';
     }
 }
 

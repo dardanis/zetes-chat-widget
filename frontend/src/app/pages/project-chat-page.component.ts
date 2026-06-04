@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { DatePipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -8,7 +9,7 @@ import { ChatMessage, ChatSession, RagApiService } from '../core/rag-api.service
 @Component({
   selector: 'app-project-chat-page',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   template: `
     <section class="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
       <aside class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
@@ -25,7 +26,15 @@ import { ChatMessage, ChatSession, RagApiService } from '../core/rag-api.service
         <div class="mt-4 space-y-2">
           @for (chat of chats(); track chat.id) {
             <button type="button" (click)="selectChat(chat)" [class]="selectedChatId() === chat.id ? 'w-full rounded-md border border-[var(--app-accent)]/50 bg-[var(--app-accent-soft)] px-3 py-2 text-left text-sm text-[var(--app-accent)]' : 'w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-left text-sm text-[var(--app-text-muted)] hover:opacity-90'">
-              {{ chat.title || ('Chat #' + chat.id) }}
+              <p class="truncate font-medium">{{ chatDisplayTitle(chat) }}</p>
+
+              @if (chatDisplaySubtitle(chat)) {
+                <p class="mt-1 truncate text-xs opacity-80">{{ chatDisplaySubtitle(chat) }}</p>
+              }
+
+              @if (chatDisplayTimestamp(chat)) {
+                <p class="mt-1 text-xs opacity-70">{{ chatDisplayTimestamp(chat) | date:'MMM d, y, h:mm a' }}</p>
+              }
             </button>
           } @empty {
             <p class="text-sm text-[var(--app-text-muted)]">No sessions yet.</p>
@@ -39,7 +48,15 @@ import { ChatMessage, ChatSession, RagApiService } from '../core/rag-api.service
             <div>
               <h3 class="text-lg font-semibold text-[var(--app-text)]">Conversation</h3>
               @if (activeChat()) {
-                <p class="text-sm text-[var(--app-text-muted)]">{{ activeChat()?.title || ('Chat #' + activeChat()?.id) }}</p>
+                <p class="text-sm text-[var(--app-text-muted)]">{{ chatDisplayTitle(activeChat()!) }}</p>
+
+                @if (chatDisplaySubtitle(activeChat()!)) {
+                  <p class="mt-1 text-xs text-[var(--app-text-muted)]">{{ chatDisplaySubtitle(activeChat()!) }}</p>
+                }
+
+                @if (chatDisplayTimestamp(activeChat()!)) {
+                  <p class="mt-1 text-xs text-[var(--app-text-muted)]">Last request: {{ chatDisplayTimestamp(activeChat()!) | date:'MMM d, y, h:mm a' }}</p>
+                }
               }
             </div>
 
@@ -186,6 +203,43 @@ export class ProjectChatPageComponent implements OnInit, OnDestroy {
       },
       complete: () => this.isSending.set(false),
     });
+  }
+
+  protected chatDisplayTitle(chat: ChatSession): string {
+    const widgetEmail = chat.metadata?.widget_user?.email?.trim();
+
+    if (chat.channel === 'widget' && widgetEmail) {
+      return widgetEmail;
+    }
+
+    return chat.title?.trim() || `Chat #${chat.id}`;
+  }
+
+  protected chatDisplaySubtitle(chat: ChatSession): string {
+    const details: string[] = [];
+    const widgetUser = chat.metadata?.widget_user;
+
+    if (chat.channel === 'widget') {
+      details.push('Widget chat');
+
+      if (widgetUser?.token_present) {
+        details.push(widgetUser.email ? 'token matched to email' : 'token detected');
+      } else if (widgetUser?.email) {
+        details.push('email provided');
+      }
+    } else if (chat.channel) {
+      details.push(chat.channel);
+    }
+
+    if (widgetUser?.subject) {
+      details.push(`sub: ${widgetUser.subject}`);
+    }
+
+    return details.join(' • ');
+  }
+
+  protected chatDisplayTimestamp(chat: ChatSession): string | null {
+    return chat.metadata?.widget_last_request_at ?? chat.updated_at ?? chat.created_at ?? null;
   }
 
   private async bindRealtime(chat: ChatSession): Promise<void> {

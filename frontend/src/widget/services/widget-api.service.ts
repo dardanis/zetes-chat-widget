@@ -40,13 +40,17 @@ export class WidgetApiService {
   private apiBaseUrl = '';
   private widgetKey = '';
   private widgetSecret = '';
+  private userToken = '';
+  private userEmail = '';
   private sessionToken = '';
   private chatSessionId: number | null = null;
 
-  configure(apiBaseUrl: string, widgetKey: string, widgetSecret: string): void {
+  configure(apiBaseUrl: string, widgetKey: string, widgetSecret: string, options?: { userToken?: string; userEmail?: string }): void {
     this.apiBaseUrl = apiBaseUrl.replace(/\/+$/, '');
     this.widgetKey = widgetKey;
     this.widgetSecret = widgetSecret;
+    this.userToken = options?.userToken?.trim() ?? '';
+    this.userEmail = options?.userEmail?.trim() ?? '';
   }
 
   get hasSession(): boolean {
@@ -57,7 +61,11 @@ export class WidgetApiService {
     return this.http
       .post<CreateSessionResponse>(
         `${this.apiBaseUrl}/api/widget/${this.widgetKey}/chats`,
-        { title: title ?? 'Widget chat' },
+        {
+          title: title ?? 'Widget chat',
+          ...(this.userToken ? { user_token: this.userToken } : {}),
+          ...(this.userEmail ? { user_email: this.userEmail } : {}),
+        },
         { headers: this.buildHeaders() }
       )
       .pipe(
@@ -77,6 +85,8 @@ export class WidgetApiService {
           chat_session_id: this.chatSessionId,
           message,
           session_token: this.sessionToken,
+          ...(this.userToken ? { user_token: this.userToken } : {}),
+          ...(this.userEmail ? { user_email: this.userEmail } : {}),
         },
         { headers: this.buildHeaders() }
       )

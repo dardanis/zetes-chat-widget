@@ -338,6 +338,8 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
   @Input({ alias: 'widget-secret' }) widgetSecret = '';
   @Input({ alias: 'api-base-url' }) apiBaseUrl = '';
   @Input({ alias: 'widget-theme' }) widgetTheme: WidgetTheme | string = 'auto';
+  @Input({ alias: 'user-token' }) userToken = '';
+  @Input({ alias: 'user-email' }) userEmail = '';
 
   protected readonly api = inject(WidgetApiService);
   private readonly elRef = inject(ElementRef);
@@ -359,11 +361,15 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   ngOnInit(): void {
-    this.api.configure(this.apiBaseUrl, this.widgetKey, this.widgetSecret);
+    this.syncApiConfig();
     this.resolveTheme();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['apiBaseUrl'] || changes['widgetKey'] || changes['widgetSecret'] || changes['userToken'] || changes['userEmail']) {
+      this.syncApiConfig();
+    }
+
     if (changes['widgetTheme']) {
       this.resolveTheme();
     }
@@ -448,6 +454,13 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
         this.isCreatingSession.set(false);
       },
       complete: () => this.isCreatingSession.set(false),
+    });
+  }
+
+  private syncApiConfig(): void {
+    this.api.configure(this.apiBaseUrl, this.widgetKey, this.widgetSecret, {
+      userToken: this.userToken,
+      userEmail: this.userEmail,
     });
   }
 

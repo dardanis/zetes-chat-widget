@@ -96,6 +96,17 @@ export interface ChatSession {
   project_id: number;
   title?: string | null;
   channel: string;
+  metadata?: {
+    widget_session_created_at?: string | null;
+    widget_last_request_at?: string | null;
+    widget_user?: {
+      token_present?: boolean;
+      token_source?: string | null;
+      email?: string | null;
+      name?: string | null;
+      subject?: string | null;
+    } | null;
+  } | null;
   created_at?: string;
   updated_at?: string;
 }
