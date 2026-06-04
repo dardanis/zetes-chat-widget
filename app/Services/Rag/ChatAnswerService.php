@@ -22,7 +22,7 @@ class ChatAnswerService
     public function answer(Project $project, ChatSession $chatSession, string $question): array
     {
         $embedding = $this->embeddingService->embed($question);
-        $contexts = $this->retrievalService->retrieve($project, $embedding);
+        $contexts = $this->retrievalService->retrieve($project, $question, $embedding);
 
         $history = $chatSession->messages()
             ->latest('id')

@@ -120,6 +120,18 @@ class ConfluenceApiService
         return trim(preg_replace('/\s+/u', ' ', strip_tags($decoded)) ?? '');
     }
 
+    public function buildEmbeddingText(string $plainText, string $pageTitle, string $spaceKey, string $spaceName, string $url): string
+    {
+        $header = [
+            'Source: Confluence',
+            'Space: '.trim($spaceName).' ('.trim($spaceKey).')',
+            'Page title: '.trim($pageTitle),
+            'URL: '.trim($url),
+        ];
+
+        return trim(implode("\n", $header)."\n\n".trim($plainText));
+    }
+
     private function request(AtlassianConnection $connection): PendingRequest
     {
         return Http::acceptJson()

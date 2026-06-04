@@ -89,8 +89,16 @@ class SyncProjectConfluenceSpaceJob implements ShouldQueue
                     continue;
                 }
 
+                $embeddingText = $confluence->buildEmbeddingText(
+                    $plainText,
+                    (string) ($page['title'] ?? ''),
+                    (string) $selectedSpace->space_key,
+                    (string) $selectedSpace->space_name,
+                    (string) ($page['url'] ?? data_get($pageSummary, 'url', '')),
+                );
+
                 $storagePath = 'rag/confluence/'.Str::uuid()->toString().'.txt';
-                Storage::disk('local')->put($storagePath, $plainText);
+                Storage::disk('local')->put($storagePath, $embeddingText);
 
                 $uploadedBy = $selectedSpace->selected_by
                     ?? $selectedSpace->connection->created_by
@@ -101,7 +109,7 @@ class SyncProjectConfluenceSpaceJob implements ShouldQueue
                     'original_name' => (string) ($page['title'] ?: $selectedSpace->space_name),
                     'storage_path' => $storagePath,
                     'mime_type' => 'text/html',
-                    'file_size' => strlen($plainText),
+                    'file_size' => strlen($embeddingText),
                     'status' => 'processing',
                     'ingestion_type' => 'confluence',
                     'source_url' => (string) ($page['url'] ?: data_get($pageSummary, 'url', '')),
@@ -121,7 +129,7 @@ class SyncProjectConfluenceSpaceJob implements ShouldQueue
                 $document->chunks()->delete();
 
                 $chunks = $chunker->chunk([
-                    ['page' => 1, 'text' => $plainText],
+                    ['page' => 1, 'text' => $embeddingText],
                 ]);
 
                 foreach ($chunks as $chunk) {

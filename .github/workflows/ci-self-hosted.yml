@@ -33,7 +33,6 @@ jobs:
           }
 
           Write-Host "Building root frontend / Vite..."
-          npm ci
           npm run build
 
           Write-Host "Building Angular frontend..."

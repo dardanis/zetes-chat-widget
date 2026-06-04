@@ -210,7 +210,7 @@ class ProjectChatTest extends TestCase
         $retrievalService = Mockery::mock(ContextRetrievalService::class);
         $retrievalService->shouldReceive('retrieve')
             ->once()
-            ->withArgs(fn (Project $resolvedProject, array $embedding): bool => $resolvedProject->is($project) && $embedding === [0.15, 0.42, 0.73])
+            ->withArgs(fn (Project $resolvedProject, string $question, array $embedding): bool => $resolvedProject->is($project) && $question === 'Do we support realtime updates?' && $embedding === [0.15, 0.42, 0.73])
             ->andReturn([
                 [
                     'chunk_id' => $chunk->id,
