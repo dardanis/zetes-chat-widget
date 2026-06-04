@@ -37,6 +37,12 @@ jobs:
 
           Write-Host "Building Angular frontend..."
           Set-Location frontend
+          if (Test-Path "..\public\ng") {
+            Remove-Item "..\public\ng" -Recurse -Force
+          }
+          if (Test-Path "..\public\widget") {
+            Remove-Item "..\public\widget" -Recurse -Force
+          }
           npm run build:all
           Set-Location ..
 
