@@ -38,7 +38,6 @@ jobs:
 
           Write-Host "Building Angular frontend..."
           Set-Location frontend
-          npm ci
           npm run build:all
           Set-Location ..
 
