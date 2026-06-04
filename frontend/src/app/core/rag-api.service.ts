@@ -41,7 +41,23 @@ export interface ProjectDocument {
   status: string;
   ingestion_type?: 'pdf' | 'web' | string;
   source_url?: string | null;
-  metadata?: { pages_count?: number; chunks_count?: number } | null;
+  metadata?: {
+    pages_count?: number;
+    chunks_count?: number;
+    title?: string;
+    provider?: string;
+    space_key?: string;
+    space_name?: string;
+    external_page_id?: string;
+    external_updated_at?: string;
+    synced_external_updated_at?: string;
+    latest_external_updated_at?: string;
+    synced_at?: string;
+    queued_at?: string;
+    failed_at?: string;
+    last_status?: string;
+    last_error?: string;
+  } | null;
   processed_at?: string | null;
   created_at?: string;
 }
@@ -229,6 +245,12 @@ export class RagApiService {
   deleteDocument(projectId: number, documentId: number): Observable<void> {
     return this.auth.refreshCsrf().pipe(
       switchMap(() => this.http.delete<void>(`/api/projects/${projectId}/documents/${documentId}`))
+    );
+  }
+
+  resyncConfluenceDocument(projectId: number, documentId: number): Observable<{ message: string; data: { document_id: number } }> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.post<{ message: string; data: { document_id: number } }>(`/api/projects/${projectId}/documents/${documentId}/resync-confluence`, {}))
     );
   }
 

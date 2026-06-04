@@ -421,15 +421,47 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
         } @else {
           <div class="mt-3 space-y-2">
             @for (document of documents(); track document.id) {
-              <div class="flex items-center justify-between gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3">
+              <div
+                class="flex items-center justify-between gap-3 rounded-lg border bg-[var(--app-surface)] px-4 py-3"
+                [style.border-color]="hasConfluenceSyncIssue(document) ? 'rgba(239, 68, 68, 0.5)' : 'var(--app-border)'"
+                [style.background-color]="hasConfluenceSyncIssue(document) ? 'rgba(239, 68, 68, 0.06)' : 'var(--app-surface)'"
+              >
                 <div class="min-w-0">
                   <p class="truncate text-sm font-medium text-[var(--app-text)]">{{ document.original_name }}</p>
                   @if (document.metadata?.chunks_count) {
                     <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">{{ document.metadata?.chunks_count }} chunks - {{ document.metadata?.pages_count ?? 0 }} pages</p>
                   }
+                  @if (isConfluenceDocument(document) && document.source_url) {
+                    <p class="mt-0.5 truncate text-xs text-[var(--app-text-muted)]">{{ document.source_url }}</p>
+                  }
+                  @if (isConfluenceDocument(document) && isConfluenceDocumentOutdated(document)) {
+                    <p class="mt-0.5 text-xs font-medium text-[var(--app-danger)]">Outdated in RAG: Confluence page changed and needs re-sync.</p>
+                  }
+                  @if (isConfluenceDocument(document) && confluenceDocumentError(document)) {
+                    <p class="mt-0.5 text-xs font-medium text-[var(--app-danger)]">Sync error: {{ confluenceDocumentError(document) }}</p>
+                  }
                 </div>
 
                 <div class="flex shrink-0 items-center gap-2">
+                  @if (isConfluenceDocument(document) && isConfluenceDocumentUnsynced(document)) {
+                    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-medium text-amber-500">
+                      <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                      Not synced
+                    </span>
+                  }
+                  @if (isConfluenceDocument(document) && isConfluenceDocumentOutdated(document)) {
+                    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--app-danger)]/10 px-2.5 py-1 text-xs font-medium text-[var(--app-danger)]">
+                      <span class="h-1.5 w-1.5 rounded-full bg-[var(--app-danger)]"></span>
+                      Outdated
+                    </span>
+                  }
+                  @if (isConfluenceDocument(document) && confluenceDocumentError(document)) {
+                    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--app-danger)]/10 px-2.5 py-1 text-xs font-medium text-[var(--app-danger)]">
+                      <span class="h-1.5 w-1.5 rounded-full bg-[var(--app-danger)]"></span>
+                      Sync error
+                    </span>
+                  }
+
                   @switch (document.status) {
                     @case ('completed') {
                       <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-medium text-emerald-500">
@@ -458,6 +490,17 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
                     @default {
                       <span class="inline-flex shrink-0 items-center rounded-full bg-[var(--app-surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--app-text-muted)]">{{ document.status }}</span>
                     }
+                  }
+
+                  @if (isConfluenceDocument(document)) {
+                  <button
+                    type="button"
+                    (click)="resyncConfluenceDocument(document)"
+                    [disabled]="isResyncingDocument(document.id)"
+                    class="rounded-md border border-[var(--app-border)] px-2.5 py-1 text-xs font-medium text-[var(--app-text-muted)] transition hover:border-[var(--app-accent)]/40 hover:bg-[var(--app-accent-soft)] hover:text-[var(--app-accent)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {{ isResyncingDocument(document.id) ? 'Queueing...' : 'Resync' }}
+                  </button>
                   }
 
                   <button
@@ -551,6 +594,7 @@ export class ProjectDocumentsPageComponent implements OnInit {
   protected readonly uploadError = signal('');
   protected readonly deleteError = signal('');
   protected readonly deletingDocumentIds = signal<Set<number>>(new Set());
+  protected readonly resyncingDocumentIds = signal<Set<number>>(new Set());
   protected readonly pendingDeleteDocument = signal<ProjectDocument | null>(null);
   protected readonly crawledUrls = signal<CrawledUrl[]>([]);
   protected readonly isCrawling = signal(false);
@@ -1042,6 +1086,91 @@ export class ProjectDocumentsPageComponent implements OnInit {
 
   protected isDeletingDocument(documentId: number): boolean {
     return this.deletingDocumentIds().has(documentId);
+  }
+
+  protected isResyncingDocument(documentId: number): boolean {
+    return this.resyncingDocumentIds().has(documentId);
+  }
+
+  protected isConfluenceDocument(document: ProjectDocument): boolean {
+    return document.ingestion_type === 'confluence';
+  }
+
+  protected isConfluenceDocumentUnsynced(document: ProjectDocument): boolean {
+    if (!this.isConfluenceDocument(document)) {
+      return false;
+    }
+
+    return document.status === 'pending' || document.status === 'processing';
+  }
+
+  protected hasConfluenceSyncIssue(document: ProjectDocument): boolean {
+    if (!this.isConfluenceDocument(document)) {
+      return false;
+    }
+
+    return this.isConfluenceDocumentOutdated(document) || Boolean(this.confluenceDocumentError(document));
+  }
+
+  protected isConfluenceDocumentOutdated(document: ProjectDocument): boolean {
+    if (!this.isConfluenceDocument(document)) {
+      return false;
+    }
+
+    const synced = document.metadata?.synced_external_updated_at ?? document.metadata?.external_updated_at;
+    const latest = document.metadata?.latest_external_updated_at;
+
+    return Boolean(synced && latest && synced !== latest);
+  }
+
+  protected confluenceDocumentError(document: ProjectDocument): string {
+    if (!this.isConfluenceDocument(document)) {
+      return '';
+    }
+
+    if (document.status === 'failed') {
+      return document.metadata?.last_error ?? 'Confluence page sync failed.';
+    }
+
+    if (document.metadata?.last_status === 'failed') {
+      return document.metadata?.last_error ?? 'Last Confluence sync failed.';
+    }
+
+    return '';
+  }
+
+  protected resyncConfluenceDocument(document: ProjectDocument): void {
+    if (!this.isConfluenceDocument(document) || this.isResyncingDocument(document.id)) {
+      return;
+    }
+
+    this.resyncingDocumentIds.update((ids) => {
+      const next = new Set(ids);
+      next.add(document.id);
+
+      return next;
+    });
+
+    this.confluenceError.set('');
+    this.confluenceSuccess.set('');
+
+    this.api.resyncConfluenceDocument(this.requireProjectId(), document.id).subscribe({
+      next: ({ message }) => {
+        this.confluenceSuccess.set(message || 'Confluence page re-sync queued.');
+        this.loadDocuments();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.confluenceError.set(error.error?.message ?? 'Failed to queue Confluence page re-sync.');
+      },
+      complete: () => {
+        this.resyncingDocumentIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(document.id);
+
+          return next;
+        });
+      },
+    });
   }
 
   protected openDeleteModal(document: ProjectDocument): void {

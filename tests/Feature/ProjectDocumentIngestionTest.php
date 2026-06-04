@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Jobs\CrawlProjectWebsiteJob;
 use App\Jobs\EmbedDocumentChunkJob;
 use App\Jobs\ProcessProjectDocumentJob;
+use App\Jobs\ResyncConfluenceDocumentJob;
 use App\Models\DocumentChunk;
 use App\Models\Project;
 use App\Models\ProjectDocument;
@@ -193,6 +194,72 @@ class ProjectDocumentIngestionTest extends TestCase
         ]);
 
         Storage::disk('local')->assertMissing('rag/documents/delete-me.pdf');
+    }
+
+    public function test_user_can_queue_single_confluence_document_resync(): void
+    {
+        Queue::fake();
+
+        [$user, $project] = $this->createProjectContext();
+
+        $document = ProjectDocument::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'uploaded_by' => $user->id,
+            'original_name' => 'Confluence page',
+            'storage_path' => 'rag/confluence/page.txt',
+            'mime_type' => 'text/html',
+            'file_size' => 120,
+            'status' => 'indexed',
+            'ingestion_type' => 'confluence',
+            'source_url' => 'https://example.atlassian.net/wiki/spaces/ENG/pages/123',
+            'metadata' => [
+                'provider' => 'confluence',
+                'space_key' => 'ENG',
+                'external_page_id' => '123',
+            ],
+        ]);
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/projects/'.$project->id.'/documents/'.$document->id.'/resync-confluence');
+
+        $response->assertAccepted();
+        $response->assertJsonPath('data.document_id', $document->id);
+
+        $this->assertDatabaseHas('project_documents', [
+            'id' => $document->id,
+            'status' => 'pending',
+        ]);
+
+        Queue::assertPushed(ResyncConfluenceDocumentJob::class, function (ResyncConfluenceDocumentJob $job) use ($document): bool {
+            return $job->projectDocumentId === $document->id;
+        });
+    }
+
+    public function test_non_confluence_document_cannot_be_resynced_as_single_page(): void
+    {
+        Queue::fake();
+
+        [$user, $project] = $this->createProjectContext();
+
+        $document = ProjectDocument::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'uploaded_by' => $user->id,
+            'original_name' => 'handbook.pdf',
+            'storage_path' => 'rag/documents/handbook.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 120,
+            'status' => 'indexed',
+            'ingestion_type' => 'pdf',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('/api/projects/'.$project->id.'/documents/'.$document->id.'/resync-confluence')
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Only Confluence documents can be re-synced individually.');
+
+        Queue::assertNotPushed(ResyncConfluenceDocumentJob::class);
     }
 
     public function test_user_cannot_delete_document_from_foreign_project(): void

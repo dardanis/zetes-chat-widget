@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\CrawlProjectWebsiteJob;
 use App\Jobs\ProcessProjectDocumentJob;
+use App\Jobs\ResyncConfluenceDocumentJob;
 use App\Models\ProjectDocument;
 use App\Services\Rag\ProjectAccessService;
 use Illuminate\Http\JsonResponse;
@@ -203,6 +204,45 @@ class ProjectDocumentController extends Controller
         $projectDocument->delete();
 
         return response()->json([], 204);
+    }
+
+    public function resyncConfluence(Request $request, int $project, int $document): JsonResponse
+    {
+        $resolvedProject = $this->accessService->resolveProjectForUser($request->user(), $project);
+
+        $projectDocument = ProjectDocument::query()
+            ->where('tenant_id', $resolvedProject->tenant_id)
+            ->where('project_id', $resolvedProject->id)
+            ->whereKey($document)
+            ->firstOrFail();
+
+        if ($projectDocument->ingestion_type !== 'confluence') {
+            return response()->json([
+                'message' => 'Only Confluence documents can be re-synced individually.',
+            ], 422);
+        }
+
+        $projectDocument->update([
+            'status' => 'pending',
+            'processed_at' => null,
+            'metadata' => array_filter(array_merge(
+                is_array($projectDocument->metadata) ? $projectDocument->metadata : [],
+                [
+                    'last_status' => 'queued',
+                    'last_error' => null,
+                    'queued_at' => now()->toIso8601String(),
+                ]
+            ), static fn (mixed $value): bool => $value !== null),
+        ]);
+
+        ResyncConfluenceDocumentJob::dispatch($projectDocument->id);
+
+        return response()->json([
+            'message' => 'Confluence page re-sync queued.',
+            'data' => [
+                'document_id' => $projectDocument->id,
+            ],
+        ], 202);
     }
 
     private function paginationMeta(LengthAwarePaginator $paginator): array
