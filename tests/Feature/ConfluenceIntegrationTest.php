@@ -167,6 +167,45 @@ class ConfluenceIntegrationTest extends TestCase
         Queue::assertPushed(SyncProjectConfluenceSpaceJob::class, 2);
     }
 
+    public function test_user_can_remove_saved_project_confluence_space(): void
+    {
+        [$user, $tenant] = $this->createTenantContext();
+        $project = $this->createProject($tenant, $user);
+
+        $connection = AtlassianConnection::query()->create([
+            'tenant_id' => $tenant->id,
+            'created_by' => $user->id,
+            'base_url' => 'https://example.atlassian.net',
+            'email' => 'owner@example.test',
+            'api_token' => 'atlassian-token',
+            'is_active' => true,
+        ]);
+
+        $space = ProjectConfluenceSpace::query()->create([
+            'tenant_id' => $tenant->id,
+            'project_id' => $project->id,
+            'atlassian_connection_id' => $connection->id,
+            'selected_by' => $user->id,
+            'space_id' => '1001',
+            'space_key' => 'ENG',
+            'space_name' => 'Engineering',
+            'space_type' => 'global',
+            'is_enabled' => true,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->deleteJson('/api/projects/'.$project->id.'/confluence/spaces/'.$space->id);
+
+        $response->assertNoContent();
+
+        $this->assertDatabaseHas('project_confluence_spaces', [
+            'id' => $space->id,
+            'tenant_id' => $tenant->id,
+            'project_id' => $project->id,
+            'is_enabled' => false,
+        ]);
+    }
+
     public function test_sync_job_fetches_confluence_page_and_indexes_it(): void
     {
         Queue::fake();

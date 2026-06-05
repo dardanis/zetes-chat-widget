@@ -16,7 +16,7 @@ class ConfluenceApiService
     public function listSpaces(AtlassianConnection $connection): array
     {
         $spaces = [];
-        $url = $this->buildPathUrl($connection->base_url, '/wiki/rest/api/space?limit=100&type=global');
+        $url = $this->buildPathUrl($connection->base_url, '/wiki/rest/api/space?limit=100');
         $maxSpaces = max((int) config('rag.confluence.max_spaces_per_request', 500), 1);
 
         while ($url !== null && count($spaces) < $maxSpaces) {

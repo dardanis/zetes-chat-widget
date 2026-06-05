@@ -376,11 +376,24 @@ import { AtlassianConnection, CrawledUrl, DocumentChunkPreview, PaginationMeta, 
             <div class="space-y-2">
               @for (space of selectedProjectSpaces(); track space.id) {
                 <div class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2">
-                  <p class="text-sm font-medium text-[var(--app-text)]">{{ space.space_name }}</p>
-                  <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">{{ space.space_key }} - {{ space.space_type }}</p>
-                  @if (space.last_synced_at) {
-                    <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">Last sync: {{ space.last_synced_at | date:'MMM d, y, h:mm a' }}</p>
-                  }
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium text-[var(--app-text)]">{{ space.space_name }}</p>
+                      <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">{{ space.space_key }} - {{ space.space_type }}</p>
+                      @if (space.last_synced_at) {
+                        <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">Last sync: {{ space.last_synced_at | date:'MMM d, y, h:mm a' }}</p>
+                      }
+                    </div>
+
+                    <button
+                      type="button"
+                      (click)="removeProjectConfluenceSpace(space)"
+                      [disabled]="isRemovingProjectSpace(space.id)"
+                      class="shrink-0 rounded-md border border-[var(--app-border)] px-2.5 py-1 text-xs font-medium text-[var(--app-text-muted)] transition hover:border-[var(--app-danger)]/40 hover:bg-[var(--app-danger)]/10 hover:text-[var(--app-danger)] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {{ isRemovingProjectSpace(space.id) ? 'Removing...' : 'Remove' }}
+                    </button>
+                  </div>
                 </div>
               }
             </div>
@@ -733,6 +746,7 @@ export class ProjectDocumentsPageComponent implements OnInit {
   protected readonly isConfluenceSavingSpaces = signal(false);
   protected readonly isConfluenceSyncing = signal(false);
   protected readonly isConfluenceSelectingAll = signal(false);
+  protected readonly removingProjectSpaceIds = signal<Set<number>>(new Set());
   protected readonly confluenceError = signal('');
   protected readonly confluenceSuccess = signal('');
   protected confluenceBaseUrl = '';
@@ -1028,6 +1042,10 @@ export class ProjectDocumentsPageComponent implements OnInit {
     return this.selectedSpaceKeys().has(spaceKey);
   }
 
+  protected isRemovingProjectSpace(spaceId: number): boolean {
+    return this.removingProjectSpaceIds().has(spaceId);
+  }
+
   protected toggleConfluenceSpace(space: ConfluenceSpace, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
 
@@ -1092,6 +1110,46 @@ export class ProjectDocumentsPageComponent implements OnInit {
         this.confluenceError.set(error.error?.message ?? 'Failed to queue Confluence sync.');
       },
       complete: () => this.isConfluenceSyncing.set(false),
+    });
+  }
+
+  protected removeProjectConfluenceSpace(space: ProjectConfluenceSpace): void {
+    if (this.isRemovingProjectSpace(space.id)) {
+      return;
+    }
+
+    this.removingProjectSpaceIds.update((ids) => {
+      const next = new Set(ids);
+      next.add(space.id);
+
+      return next;
+    });
+
+    this.confluenceError.set('');
+    this.confluenceSuccess.set('');
+
+    this.api.removeProjectConfluenceSpace(this.requireProjectId(), space.id).subscribe({
+      next: () => {
+        this.selectedProjectSpaces.update((spaces) => spaces.filter((item) => item.id !== space.id));
+        this.selectedSpaceKeys.update((keys) => {
+          const next = new Set(keys);
+          next.delete(space.space_key);
+
+          return next;
+        });
+        this.confluenceSuccess.set(`Removed ${space.space_name} from this project.`);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.confluenceError.set(error.error?.message ?? 'Failed to remove Confluence space from this project.');
+      },
+      complete: () => {
+        this.removingProjectSpaceIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(space.id);
+
+          return next;
+        });
+      },
     });
   }
 

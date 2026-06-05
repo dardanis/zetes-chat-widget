@@ -218,6 +218,21 @@ class ConfluenceIntegrationController extends Controller
         ], 202);
     }
 
+    public function destroyProjectSpace(Request $request, int $project, int $space): JsonResponse
+    {
+        $resolvedProject = $this->accessService->resolveProjectForUser($request->user(), $project);
+
+        $projectSpace = ProjectConfluenceSpace::query()
+            ->where('tenant_id', $resolvedProject->tenant_id)
+            ->where('project_id', $resolvedProject->id)
+            ->whereKey($space)
+            ->firstOrFail();
+
+        $projectSpace->update(['is_enabled' => false]);
+
+        return response()->json([], 204);
+    }
+
     private function ensureTenantMembership(Request $request, int $tenantId): void
     {
         $isMember = $request->user()->tenants()->whereKey($tenantId)->exists();

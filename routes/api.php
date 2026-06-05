@@ -56,5 +56,6 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::get('/projects/{project}/confluence/spaces', [ConfluenceIntegrationController::class, 'indexProjectSpaces']);
     Route::put('/projects/{project}/confluence/spaces', [ConfluenceIntegrationController::class, 'updateProjectSpaces']);
+    Route::delete('/projects/{project}/confluence/spaces/{space}', [ConfluenceIntegrationController::class, 'destroyProjectSpace']);
     Route::post('/projects/{project}/confluence/sync', [ConfluenceIntegrationController::class, 'syncProjectSpaces']);
 });

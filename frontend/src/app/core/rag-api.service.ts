@@ -328,6 +328,12 @@ export class RagApiService {
     );
   }
 
+  removeProjectConfluenceSpace(projectId: number, spaceId: number): Observable<void> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.delete<void>(`/api/projects/${projectId}/confluence/spaces/${spaceId}`))
+    );
+  }
+
   syncProjectConfluence(projectId: number, payload?: { connection_id?: number | null }): Observable<{ message: string; data: { spaces_queued: number } }> {
     return this.auth.refreshCsrf().pipe(
       switchMap(() => this.http.post<{ message: string; data: { spaces_queued: number } }>(`/api/projects/${projectId}/confluence/sync`, payload ?? {}))
