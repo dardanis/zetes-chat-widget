@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\CrawlProjectWebsiteJob;
 use App\Jobs\ProcessProjectDocumentJob;
 use App\Jobs\ResyncConfluenceDocumentJob;
+use App\Models\DocumentChunk;
 use App\Models\ProjectDocument;
 use App\Services\Rag\ProjectAccessService;
 use Illuminate\Http\JsonResponse;
@@ -123,6 +124,37 @@ class ProjectDocumentController extends Controller
         ProcessProjectDocumentJob::dispatch($document->id);
 
         return response()->json(['data' => $document], 202);
+    }
+
+    public function content(Request $request, int $project, int $document): JsonResponse
+    {
+        $resolvedProject = $this->accessService->resolveProjectForUser($request->user(), $project);
+
+        $payload = $request->validate([
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:200'],
+        ]);
+
+        $projectDocument = ProjectDocument::query()
+            ->where('tenant_id', $resolvedProject->tenant_id)
+            ->where('project_id', $resolvedProject->id)
+            ->whereKey($document)
+            ->firstOrFail();
+
+        $perPage = (int) ($payload['per_page'] ?? 25);
+        $page = (int) ($payload['page'] ?? 1);
+
+        $chunks = DocumentChunk::query()
+            ->where('tenant_id', $resolvedProject->tenant_id)
+            ->where('project_id', $resolvedProject->id)
+            ->where('project_document_id', $projectDocument->id)
+            ->orderBy('chunk_index')
+            ->paginate($perPage, ['id', 'chunk_index', 'page_from', 'page_to', 'content', 'metadata'], 'page', $page);
+
+        return response()->json([
+            'data' => $chunks->items(),
+            'meta' => $this->paginationMeta($chunks),
+        ]);
     }
 
     public function crawl(Request $request, int $project): JsonResponse

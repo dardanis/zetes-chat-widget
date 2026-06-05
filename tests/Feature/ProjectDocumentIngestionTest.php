@@ -409,6 +409,55 @@ class ProjectDocumentIngestionTest extends TestCase
         $response->assertJsonPath('data.0.chunks_count', 3);
     }
 
+    public function test_user_can_view_document_chunk_content_preview(): void
+    {
+        [$user, $project] = $this->createProjectContext();
+
+        $document = ProjectDocument::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'uploaded_by' => $user->id,
+            'original_name' => 'preview.pdf',
+            'storage_path' => 'rag/documents/preview.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 128,
+            'status' => 'indexed',
+            'ingestion_type' => 'pdf',
+        ]);
+
+        DocumentChunk::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'project_document_id' => $document->id,
+            'chunk_index' => 0,
+            'page_from' => 1,
+            'page_to' => 1,
+            'content' => 'First extracted paragraph.',
+            'metadata' => ['strategy' => 'test'],
+        ]);
+
+        DocumentChunk::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'project_document_id' => $document->id,
+            'chunk_index' => 1,
+            'page_from' => 2,
+            'page_to' => 2,
+            'content' => 'Second extracted paragraph.',
+            'metadata' => ['strategy' => 'test'],
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/projects/'.$project->id.'/documents/'.$document->id.'/content?per_page=1&page=2');
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.chunk_index', 1);
+        $response->assertJsonPath('data.0.content', 'Second extracted paragraph.');
+        $response->assertJsonPath('meta.current_page', 2);
+        $response->assertJsonPath('meta.last_page', 2);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();

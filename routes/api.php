@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
 
     Route::get('/projects/{project}/documents', [ProjectDocumentController::class, 'index']);
+    Route::get('/projects/{project}/documents/{document}/content', [ProjectDocumentController::class, 'content']);
     Route::post('/projects/{project}/documents', [ProjectDocumentController::class, 'store']);
     Route::delete('/projects/{project}/documents/{document}', [ProjectDocumentController::class, 'destroy']);
     Route::post('/projects/{project}/documents/{document}/resync-confluence', [ProjectDocumentController::class, 'resyncConfluence']);

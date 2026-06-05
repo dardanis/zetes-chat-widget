@@ -62,6 +62,15 @@ export interface ProjectDocument {
   created_at?: string;
 }
 
+export interface DocumentChunkPreview {
+  id: number;
+  chunk_index: number;
+  page_from?: number | null;
+  page_to?: number | null;
+  content: string;
+  metadata?: Record<string, unknown> | null;
+}
+
 export interface CrawledUrl {
   id: number;
   url: string;
@@ -229,6 +238,15 @@ export class RagApiService {
       params: {
         page: String(options?.page ?? 1),
         per_page: String(options?.per_page ?? 10),
+      },
+    });
+  }
+
+  listDocumentContent(projectId: number, documentId: number, options?: { page?: number; per_page?: number }): Observable<ApiPaginatedResponse<DocumentChunkPreview>> {
+    return this.http.get<ApiPaginatedResponse<DocumentChunkPreview>>(`/api/projects/${projectId}/documents/${documentId}/content`, {
+      params: {
+        page: String(options?.page ?? 1),
+        per_page: String(options?.per_page ?? 25),
       },
     });
   }

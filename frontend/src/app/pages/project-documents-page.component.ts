@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace, ConfluenceSpace, ProjectDocument, RagApiService } from '../core/rag-api.service';
+import { AtlassianConnection, CrawledUrl, DocumentChunkPreview, PaginationMeta, ProjectConfluenceSpace, ConfluenceSpace, ProjectDocument, RagApiService } from '../core/rag-api.service';
 
 @Component({
   selector: 'app-project-documents-page',
@@ -523,6 +523,15 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
 
                   <button
                     type="button"
+                    (click)="openPreviewModal(document)"
+                    [disabled]="isLoadingDocumentPreview(document.id)"
+                    class="rounded-md border border-[var(--app-border)] px-2.5 py-1 text-xs font-medium text-[var(--app-text-muted)] transition hover:border-[var(--app-accent)]/40 hover:bg-[var(--app-accent-soft)] hover:text-[var(--app-accent)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {{ isLoadingDocumentPreview(document.id) ? 'Loading...' : 'View text' }}
+                  </button>
+
+                  <button
+                    type="button"
                     (click)="openDeleteModal(document)"
                     [disabled]="isDeletingDocument(document.id)"
                     class="rounded-md border border-[var(--app-border)] px-2.5 py-1 text-xs font-medium text-[var(--app-text-muted)] transition hover:border-[var(--app-danger)]/40 hover:bg-[var(--app-danger)]/10 hover:text-[var(--app-danger)] disabled:cursor-not-allowed disabled:opacity-50"
@@ -565,6 +574,79 @@ import { AtlassianConnection, CrawledUrl, PaginationMeta, ProjectConfluenceSpace
           </div>
         }
       </div>
+
+      @if (previewDocument()) {
+        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4" (click)="closePreviewModal()">
+          <div class="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-xl" (click)="$event.stopPropagation()">
+            <div class="border-b border-[var(--app-border)] px-5 py-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <h4 class="truncate text-base font-semibold text-[var(--app-text)]">{{ previewDocument()!.original_name }}</h4>
+                  <p class="mt-1 text-xs text-[var(--app-text-muted)]">Extracted chunks: {{ previewChunksTotal() }}</p>
+                </div>
+                <button
+                  type="button"
+                  (click)="closePreviewModal()"
+                  class="rounded-md border border-[var(--app-border)] px-2.5 py-1 text-xs text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)]"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div class="min-h-0 flex-1 overflow-auto px-5 py-4">
+              @if (isLoadingPreviewChunks()) {
+                <div class="space-y-2">
+                  <div class="h-16 animate-pulse rounded-lg bg-[var(--app-surface-2)]"></div>
+                  <div class="h-16 animate-pulse rounded-lg bg-[var(--app-surface-2)]"></div>
+                </div>
+              } @else if (previewError()) {
+                <p class="rounded-lg border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 px-3 py-2 text-sm text-[var(--app-danger)]">{{ previewError() }}</p>
+              } @else if (previewChunks().length === 0) {
+                <p class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text-muted)]">No extracted text chunks available for this document yet.</p>
+              } @else {
+                <div class="space-y-3">
+                  @for (chunk of previewChunks(); track chunk.id) {
+                    <article class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3">
+                      <p class="text-xs font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">
+                        Chunk #{{ chunk.chunk_index }}
+                        @if (chunk.page_from || chunk.page_to) {
+                          · Pages {{ chunk.page_from ?? '?' }}-{{ chunk.page_to ?? '?' }}
+                        }
+                      </p>
+                      <pre class="mt-2 whitespace-pre-wrap break-words text-sm text-[var(--app-text)]">{{ chunk.content }}</pre>
+                    </article>
+                  }
+                </div>
+              }
+            </div>
+
+            @if (previewChunksTotalPages() > 1) {
+              <div class="flex items-center justify-between border-t border-[var(--app-border)] px-5 py-3">
+                <p class="text-xs text-[var(--app-text-muted)]">Page {{ previewChunksPage() }} of {{ previewChunksTotalPages() }}</p>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    (click)="goToPreviewChunksPage(previewChunksPage() - 1)"
+                    [disabled]="previewChunksPage() <= 1 || isLoadingPreviewChunks()"
+                    class="rounded-md border border-[var(--app-border)] px-2 py-1 text-xs text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)] disabled:opacity-50"
+                  >
+                    Prev
+                  </button>
+                  <button
+                    type="button"
+                    (click)="goToPreviewChunksPage(previewChunksPage() + 1)"
+                    [disabled]="previewChunksPage() >= previewChunksTotalPages() || isLoadingPreviewChunks()"
+                    class="rounded-md border border-[var(--app-border)] px-2 py-1 text-xs text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)] disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
 
       @if (pendingDeleteDocument()) {
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4" (click)="closeDeleteModal()">
@@ -613,6 +695,14 @@ export class ProjectDocumentsPageComponent implements OnInit {
   protected readonly deleteError = signal('');
   protected readonly deletingDocumentIds = signal<Set<number>>(new Set());
   protected readonly resyncingDocumentIds = signal<Set<number>>(new Set());
+  protected readonly previewDocument = signal<ProjectDocument | null>(null);
+  protected readonly previewChunks = signal<DocumentChunkPreview[]>([]);
+  protected readonly isLoadingPreviewChunks = signal(false);
+  protected readonly previewError = signal('');
+  protected readonly previewChunksPage = signal(1);
+  protected readonly previewChunksPerPage = signal(25);
+  protected readonly previewChunksTotal = signal(0);
+  protected readonly previewChunksLastPage = signal(1);
   protected readonly pendingDeleteDocument = signal<ProjectDocument | null>(null);
   protected readonly crawledUrls = signal<CrawledUrl[]>([]);
   protected readonly isCrawling = signal(false);
@@ -1188,6 +1278,63 @@ export class ProjectDocumentsPageComponent implements OnInit {
           return next;
         });
       },
+    });
+  }
+
+  protected isLoadingDocumentPreview(documentId: number): boolean {
+    return this.isLoadingPreviewChunks() && this.previewDocument()?.id === documentId;
+  }
+
+  protected openPreviewModal(document: ProjectDocument): void {
+    this.previewDocument.set(document);
+    this.previewChunks.set([]);
+    this.previewError.set('');
+    this.previewChunksPage.set(1);
+    this.loadDocumentPreviewChunks();
+  }
+
+  protected closePreviewModal(): void {
+    this.previewDocument.set(null);
+    this.previewChunks.set([]);
+    this.previewError.set('');
+    this.isLoadingPreviewChunks.set(false);
+  }
+
+  protected previewChunksTotalPages(): number {
+    return this.previewChunksLastPage();
+  }
+
+  protected goToPreviewChunksPage(page: number): void {
+    if (page < 1 || page > this.previewChunksTotalPages() || this.previewDocument() === null) {
+      return;
+    }
+
+    this.previewChunksPage.set(page);
+    this.loadDocumentPreviewChunks();
+  }
+
+  private loadDocumentPreviewChunks(): void {
+    const document = this.previewDocument();
+
+    if (!document) {
+      return;
+    }
+
+    this.isLoadingPreviewChunks.set(true);
+    this.previewError.set('');
+
+    this.api.listDocumentContent(this.requireProjectId(), document.id, {
+      page: this.previewChunksPage(),
+      per_page: this.previewChunksPerPage(),
+    }).subscribe({
+      next: ({ data, meta }) => {
+        this.previewChunks.set(data);
+        this.applyPaginationMeta(meta, this.previewChunksPage, this.previewChunksPerPage, this.previewChunksTotal, this.previewChunksLastPage);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.previewError.set(error.error?.message ?? 'Failed to load document text preview.');
+      },
+      complete: () => this.isLoadingPreviewChunks.set(false),
     });
   }
 
