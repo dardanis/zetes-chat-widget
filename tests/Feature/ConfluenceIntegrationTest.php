@@ -263,6 +263,59 @@ class ConfluenceIntegrationTest extends TestCase
         Storage::disk('local')->assertExists('rag/confluence');
     }
 
+    public function test_confluence_service_supports_base_url_with_wiki_suffix(): void
+    {
+        Http::fake([
+            'https://example.atlassian.net/wiki/rest/api/content*' => Http::response([
+                'results' => [
+                    [
+                        'id' => '12345',
+                        'title' => 'Release Runbook',
+                        '_links' => ['webui' => '/spaces/ENG/pages/12345/Release-Runbook'],
+                        'version' => ['when' => '2026-06-01T09:00:00.000Z'],
+                    ],
+                ],
+                '_links' => [],
+            ], 200),
+        ]);
+
+        $connection = new AtlassianConnection([
+            'base_url' => 'https://example.atlassian.net/wiki',
+            'email' => 'owner@example.test',
+            'api_token' => 'atlassian-token',
+            'is_active' => true,
+        ]);
+
+        $pages = (new ConfluenceApiService())->listPagesForSpace($connection, 'ENG');
+
+        $this->assertCount(1, $pages);
+        $this->assertSame('12345', $pages[0]['id']);
+
+        Http::assertSent(static function ($request): bool {
+            return $request->url() === 'https://example.atlassian.net/wiki/rest/api/content?spaceKey=ENG&type=page&limit=50&expand=version';
+        });
+    }
+
+    public function test_confluence_service_error_includes_status_and_url(): void
+    {
+        Http::fake([
+            '*' => Http::response(['message' => 'Forbidden'], 403),
+        ]);
+
+        $connection = new AtlassianConnection([
+            'base_url' => 'https://example.atlassian.net',
+            'email' => 'owner@example.test',
+            'api_token' => 'atlassian-token',
+            'is_active' => true,
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unable to fetch Confluence pages. [403');
+        $this->expectExceptionMessage('url=https://example.atlassian.net/wiki/rest/api/content?spaceKey=ENG&type=page&limit=50&expand=version');
+
+        (new ConfluenceApiService())->listPagesForSpace($connection, 'ENG');
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();

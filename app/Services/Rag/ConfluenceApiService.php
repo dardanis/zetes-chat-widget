@@ -4,6 +4,7 @@ namespace App\Services\Rag;
 
 use App\Models\AtlassianConnection;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -22,7 +23,7 @@ class ConfluenceApiService
             $response = $this->request($connection)->get($url);
 
             if (! $response->ok()) {
-                throw new RuntimeException('Unable to fetch Confluence spaces.');
+                $this->throwConfluenceRequestException('Unable to fetch Confluence spaces.', $response, $url);
             }
 
             $payload = $response->json();
@@ -63,7 +64,7 @@ class ConfluenceApiService
             $response = $this->request($connection)->get($url);
 
             if (! $response->ok()) {
-                throw new RuntimeException('Unable to fetch Confluence pages.');
+                $this->throwConfluenceRequestException('Unable to fetch Confluence pages.', $response, $url);
             }
 
             $payload = $response->json();
@@ -141,15 +142,21 @@ class ConfluenceApiService
 
     private function resolveContentUrl(string $baseUrl, string $webUiPath): string
     {
+        $origin = $this->normalizeConfluenceOrigin($baseUrl);
+
         if ($webUiPath === '') {
-            return rtrim($baseUrl, '/');
+            return $origin;
         }
 
         if (str_starts_with($webUiPath, 'http://') || str_starts_with($webUiPath, 'https://')) {
             return $webUiPath;
         }
 
-        return rtrim($baseUrl, '/').'/wiki'.(str_starts_with($webUiPath, '/') ? $webUiPath : '/'.$webUiPath);
+        if (str_starts_with($webUiPath, '/wiki/')) {
+            return $origin.$webUiPath;
+        }
+
+        return $origin.'/wiki'.(str_starts_with($webUiPath, '/') ? $webUiPath : '/'.$webUiPath);
     }
 
     private function resolveNextUrl(string $baseUrl, string $next): ?string
@@ -167,6 +174,27 @@ class ConfluenceApiService
 
     private function buildPathUrl(string $baseUrl, string $path): string
     {
-        return rtrim($baseUrl, '/').'/'.ltrim($path, '/');
+        return $this->normalizeConfluenceOrigin($baseUrl).'/'.ltrim($path, '/');
+    }
+
+    private function normalizeConfluenceOrigin(string $baseUrl): string
+    {
+        $normalized = rtrim($baseUrl, '/');
+
+        if (str_ends_with(strtolower($normalized), '/wiki')) {
+            $normalized = substr($normalized, 0, -5);
+        }
+
+        return rtrim($normalized, '/');
+    }
+
+    private function throwConfluenceRequestException(string $message, Response $response, string $url): never
+    {
+        $body = trim((string) $response->body());
+        $bodySnippet = $body === '' ? 'empty response body' : mb_substr($body, 0, 500);
+        $reason = $response->reason();
+        $statusText = $reason ? "{$response->status()} {$reason}" : (string) $response->status();
+
+        throw new RuntimeException("{$message} [{$statusText}] url={$url}; response={$bodySnippet}");
     }
 }
