@@ -13,7 +13,9 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Rag\DocumentChunkingService;
 use App\Services\Rag\OllamaEmbeddingService;
-use App\Services\Rag\PdfTextExtractorService;
+use App\Services\Rag\Parsers\DocumentParserInterface;
+use App\Services\Rag\Parsers\DocumentParserRegistry;
+use App\Services\Rag\Parsers\ParsedDocumentAdapter;
 use App\Services\Rag\WebsiteCrawlerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -50,6 +52,7 @@ class ProjectDocumentIngestionTest extends TestCase
             'uploaded_by' => $user->id,
             'original_name' => 'handbook.pdf',
             'status' => 'pending',
+            'ingestion_type' => 'pdf',
         ]);
 
         Queue::assertPushed(ProcessProjectDocumentJob::class, function (ProcessProjectDocumentJob $job) use ($documentId): bool {
@@ -76,11 +79,14 @@ class ProjectDocumentIngestionTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $extractor = Mockery::mock(PdfTextExtractorService::class);
-        $extractor->shouldReceive('extractByPage')->once()->andReturn([
-            ['page' => 1, 'text' => 'Introduction to the platform.'],
-            ['page' => 2, 'text' => 'Installation and setup details.'],
+        $parser = Mockery::mock(DocumentParserInterface::class);
+        $parser->shouldReceive('parse')->once()->andReturn([
+            ['text' => 'Introduction to the platform.', 'metadata' => ['file_type' => 'pdf', 'page_number' => 1]],
+            ['text' => 'Installation and setup details.', 'metadata' => ['file_type' => 'pdf', 'page_number' => 2]],
         ]);
+
+        $registry = Mockery::mock(DocumentParserRegistry::class);
+        $registry->shouldReceive('resolve')->once()->with('pdf', 'application/pdf')->andReturn($parser);
 
         $chunker = Mockery::mock(DocumentChunkingService::class);
         $chunker->shouldReceive('chunk')->once()->andReturn([
@@ -100,7 +106,7 @@ class ProjectDocumentIngestionTest extends TestCase
             ],
         ]);
 
-        (new ProcessProjectDocumentJob($document->id))->handle($extractor, $chunker);
+        (new ProcessProjectDocumentJob($document->id))->handle($registry, new ParsedDocumentAdapter, $chunker);
 
         $document->refresh();
 
@@ -108,6 +114,7 @@ class ProjectDocumentIngestionTest extends TestCase
         $this->assertSame(2, $document->chunks()->count());
         $this->assertSame(2, $document->metadata['chunks_count']);
         $this->assertSame(2, $document->metadata['pages_count']);
+        $this->assertSame(2, $document->metadata['source_units_count']);
 
         $this->assertDatabaseHas('document_chunks', [
             'project_document_id' => $document->id,
@@ -116,6 +123,149 @@ class ProjectDocumentIngestionTest extends TestCase
         ]);
 
         Queue::assertPushed(EmbedDocumentChunkJob::class, 2);
+    }
+
+    public function test_uploading_a_text_document_queues_document_processing(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        [$user, $project] = $this->createProjectContext();
+
+        $response = $this->actingAs($user)->post('/api/projects/'.$project->id.'/documents', [
+            'file' => UploadedFile::fake()->createWithContent('notes.txt', 'Install the widget on your site.'),
+        ], [
+            'Accept' => 'application/json',
+        ]);
+
+        $response->assertAccepted();
+        $response->assertJsonPath('data.ingestion_type', 'txt');
+
+        $this->assertDatabaseHas('project_documents', [
+            'id' => $response->json('data.id'),
+            'original_name' => 'notes.txt',
+            'ingestion_type' => 'txt',
+            'status' => 'pending',
+        ]);
+
+        Queue::assertPushed(ProcessProjectDocumentJob::class);
+    }
+
+    public function test_uploading_office_documents_queues_document_processing(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        [$user, $project] = $this->createProjectContext();
+
+        foreach (['xlsx', 'xls', 'docx'] as $extension) {
+            $response = $this->actingAs($user)->post('/api/projects/'.$project->id.'/documents', [
+                'file' => UploadedFile::fake()->createWithContent('handbook.'.$extension, 'office-placeholder'),
+            ], [
+                'Accept' => 'application/json',
+            ]);
+
+            $response->assertAccepted();
+            $response->assertJsonPath('data.ingestion_type', $extension);
+
+            $this->assertDatabaseHas('project_documents', [
+                'id' => $response->json('data.id'),
+                'original_name' => 'handbook.'.$extension,
+                'ingestion_type' => $extension,
+                'status' => 'pending',
+            ]);
+        }
+
+        Queue::assertPushed(ProcessProjectDocumentJob::class, 3);
+    }
+
+    public function test_processing_job_indexes_csv_rows_with_metadata(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        [$user, $project] = $this->createProjectContext();
+        Storage::disk('local')->put('rag/documents/customers.csv', "name,email\nAda,ada@example.com\nGrace,grace@example.com\n");
+
+        $document = ProjectDocument::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'uploaded_by' => $user->id,
+            'original_name' => 'customers.csv',
+            'storage_path' => 'rag/documents/customers.csv',
+            'mime_type' => 'text/csv',
+            'file_size' => 128,
+            'status' => 'pending',
+            'ingestion_type' => 'csv',
+        ]);
+
+        (new ProcessProjectDocumentJob($document->id))->handle(
+            app(DocumentParserRegistry::class),
+            app(ParsedDocumentAdapter::class),
+            app(DocumentChunkingService::class),
+        );
+
+        $document->refresh();
+        $chunk = $document->chunks()->first();
+
+        $this->assertSame('indexed', $document->status);
+        $this->assertNotNull($chunk);
+        $this->assertStringContainsString('name: Ada', $chunk->content);
+        $this->assertSame('csv', $chunk->metadata['file_type']);
+        $this->assertSame('2-3', $chunk->metadata['row_range']);
+
+        Queue::assertPushed(EmbedDocumentChunkJob::class);
+    }
+
+    public function test_unsupported_file_type_is_rejected(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        [$user, $project] = $this->createProjectContext();
+
+        $this->actingAs($user)->post('/api/projects/'.$project->id.'/documents', [
+            'file' => UploadedFile::fake()->createWithContent('archive.zip', 'not supported'),
+        ], [
+            'Accept' => 'application/json',
+        ])->assertStatus(422);
+
+        $this->assertDatabaseCount('project_documents', 0);
+        Queue::assertNotPushed(ProcessProjectDocumentJob::class);
+    }
+
+    public function test_empty_file_is_marked_failed(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        [$user, $project] = $this->createProjectContext();
+        Storage::disk('local')->put('rag/documents/empty.txt', '');
+
+        $document = ProjectDocument::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'uploaded_by' => $user->id,
+            'original_name' => 'empty.txt',
+            'storage_path' => 'rag/documents/empty.txt',
+            'mime_type' => 'text/plain',
+            'file_size' => 0,
+            'status' => 'pending',
+            'ingestion_type' => 'txt',
+        ]);
+
+        (new ProcessProjectDocumentJob($document->id))->handle(
+            app(DocumentParserRegistry::class),
+            app(ParsedDocumentAdapter::class),
+            app(DocumentChunkingService::class),
+        );
+
+        $document->refresh();
+
+        $this->assertSame('failed', $document->status);
+        $this->assertSame('No readable text could be extracted from file.', $document->metadata['last_error']);
+        $this->assertSame(0, $document->chunks()->count());
+        Queue::assertNotPushed(EmbedDocumentChunkJob::class);
     }
 
     public function test_embedding_job_persists_embedding_payload_on_chunk(): void
@@ -485,4 +635,3 @@ class ProjectDocumentIngestionTest extends TestCase
         return [$user, $project];
     }
 }
-

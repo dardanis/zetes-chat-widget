@@ -9,6 +9,19 @@ return [
         'min_chunk_chars' => (int) env('RAG_CHUNK_MIN_CHARS', 300),
     ],
 
+    'parsers' => [
+        'csv' => [
+            'rows_per_chunk' => (int) env('RAG_CSV_ROWS_PER_CHUNK', 50),
+        ],
+        'excel' => [
+            'rows_per_chunk' => (int) env('RAG_EXCEL_ROWS_PER_CHUNK', 20),
+            'max_sheets' => (int) env('RAG_EXCEL_MAX_SHEETS', 20),
+            'max_rows_per_sheet' => (int) env('RAG_EXCEL_MAX_ROWS_PER_SHEET', 5000),
+            'max_columns_per_sheet' => (int) env('RAG_EXCEL_MAX_COLUMNS_PER_SHEET', 100),
+        ],
+        'max_chars_per_parsed_unit' => (int) env('RAG_MAX_CHARS_PER_PARSED_UNIT', 12000),
+    ],
+
     'retrieval' => [
         'top_k' => (int) env('RAG_RETRIEVAL_TOP_K', 6),
     ],

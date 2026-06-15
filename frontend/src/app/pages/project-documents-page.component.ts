@@ -70,20 +70,20 @@ import { AtlassianConnection, CrawledUrl, DocumentChunkPreview, PaginationMeta, 
           (dragleave)="isDragging.set(false)"
           (drop)="onDrop($event)"
         >
-          <input id="file-upload" type="file" accept="application/pdf" (change)="onFileSelected($event)" class="absolute inset-0 cursor-pointer opacity-0" />
+          <input id="file-upload" type="file" [accept]="acceptedUploadTypes" (change)="onFileSelected($event)" class="absolute inset-0 cursor-pointer opacity-0" />
           <svg class="mx-auto h-8 w-8 text-[var(--app-text-muted)]" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
           @if (selectedFile()) {
             <p class="mt-2 text-sm font-medium text-[var(--app-text)]">{{ selectedFile()!.name }}</p>
             <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">{{ (selectedFile()!.size / 1024 / 1024).toFixed(1) }} MB</p>
           } @else {
-            <p class="mt-2 text-sm text-[var(--app-text-muted)]">Drop a PDF here or <span class="text-[var(--app-accent)]">browse</span></p>
-            <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">PDF files up to 50 MB</p>
+            <p class="mt-2 text-sm text-[var(--app-text-muted)]">Drop a document here or <span class="text-[var(--app-accent)]">browse</span></p>
+            <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">{{ supportedUploadLabel }} up to 20 MB</p>
           }
         </div>
 
         @if (selectedFile()) {
           <button type="button" (click)="uploadSelectedFile()" [disabled]="isUploading()" class="mt-4 rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60">
-            {{ isUploading() ? 'Uploading...' : 'Upload PDF' }}
+            {{ isUploading() ? 'Uploading...' : 'Upload document' }}
           </button>
         }
       </div>
@@ -557,7 +557,7 @@ import { AtlassianConnection, CrawledUrl, DocumentChunkPreview, PaginationMeta, 
               <div class="py-12 text-center">
                 <svg class="mx-auto h-10 w-10 text-[var(--app-text-muted)]" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
                 <p class="mt-3 text-sm text-[var(--app-text-muted)]">No documents uploaded yet</p>
-                <p class="mt-1 text-xs text-[var(--app-text-muted)]">Upload a PDF above to get started.</p>
+                <p class="mt-1 text-xs text-[var(--app-text-muted)]">Upload a document above to get started.</p>
               </div>
             }
 
@@ -698,7 +698,10 @@ import { AtlassianConnection, CrawledUrl, DocumentChunkPreview, PaginationMeta, 
 export class ProjectDocumentsPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(RagApiService);
+  private readonly supportedUploadExtensions = ['pdf', 'txt', 'md', 'csv', 'xlsx', 'xls', 'docx', 'html', 'json', 'xml'];
 
+  protected readonly acceptedUploadTypes = this.supportedUploadExtensions.map((extension) => `.${extension}`).join(',');
+  protected readonly supportedUploadLabel = this.supportedUploadExtensions.map((extension) => extension.toUpperCase()).join(', ');
   protected readonly documents = signal<ProjectDocument[]>([]);
   protected readonly selectedFile = signal<File | null>(null);
   protected readonly isUploading = signal(false);
@@ -773,7 +776,8 @@ export class ProjectDocumentsPageComponent implements OnInit {
 
   protected onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.selectedFile.set(input.files?.item(0) ?? null);
+    const file = input.files?.item(0) ?? null;
+    this.setSelectedUploadFile(file);
   }
 
   protected onDragOver(event: DragEvent): void {
@@ -785,9 +789,7 @@ export class ProjectDocumentsPageComponent implements OnInit {
     event.preventDefault();
     this.isDragging.set(false);
     const file = event.dataTransfer?.files.item(0);
-    if (file && file.type === 'application/pdf') {
-      this.selectedFile.set(file);
-    }
+    this.setSelectedUploadFile(file ?? null);
   }
 
   protected uploadSelectedFile(): void {
@@ -806,11 +808,36 @@ export class ProjectDocumentsPageComponent implements OnInit {
         this.selectedFile.set(null);
       },
       error: (error: HttpErrorResponse) => {
-        this.uploadError.set(error.error?.message ?? 'PDF upload failed.');
+        this.uploadError.set(error.error?.message ?? 'Document upload failed.');
         this.isUploading.set(false);
       },
       complete: () => this.isUploading.set(false),
     });
+  }
+
+  private setSelectedUploadFile(file: File | null): void {
+    this.uploadError.set('');
+
+    if (!file) {
+      this.selectedFile.set(null);
+
+      return;
+    }
+
+    if (!this.isSupportedUploadFile(file)) {
+      this.selectedFile.set(null);
+      this.uploadError.set(`Unsupported file type. Supported types are: ${this.supportedUploadLabel}.`);
+
+      return;
+    }
+
+    this.selectedFile.set(file);
+  }
+
+  private isSupportedUploadFile(file: File): boolean {
+    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+
+    return this.supportedUploadExtensions.includes(extension);
   }
 
   protected loadDocuments(): void {

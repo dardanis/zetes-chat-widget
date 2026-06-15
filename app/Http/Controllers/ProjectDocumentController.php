@@ -18,6 +18,8 @@ use ValueError;
 
 class ProjectDocumentController extends Controller
 {
+    private const SUPPORTED_DOCUMENT_EXTENSIONS = ['pdf', 'txt', 'md', 'csv', 'xlsx', 'xls', 'docx', 'html', 'json', 'xml'];
+
     public function __construct(private readonly ProjectAccessService $accessService) {}
 
     public function index(Request $request, int $project): JsonResponse
@@ -49,12 +51,12 @@ class ProjectDocumentController extends Controller
         $resolvedProject = $this->accessService->resolveProjectForUser($request->user(), $project);
 
         $payload = $request->validate([
-            'file' => ['required', 'file', 'mimetypes:application/pdf', 'max:20480'],
+            'file' => ['required', 'file', 'extensions:'.implode(',', self::SUPPORTED_DOCUMENT_EXTENSIONS), 'max:20480'],
         ]);
 
         $file = $payload['file'];
         $originalName = $file->getClientOriginalName();
-        $clientMimeType = $file->getClientMimeType() ?: 'application/pdf';
+        $clientMimeType = $file->getMimeType() ?: $file->getClientMimeType() ?: 'application/octet-stream';
         $fileSize = (int) ($file->getSize() ?? $file->getClientSize() ?? 0);
 
         if (! $file->isValid()) {
@@ -75,7 +77,14 @@ class ProjectDocumentController extends Controller
             $directory = 'rag/documents';
             $disk->makeDirectory($directory);
 
-            $extension = strtolower($file->getClientOriginalExtension() ?: 'pdf');
+            $extension = strtolower($file->getClientOriginalExtension() ?: '');
+
+            if (! in_array($extension, self::SUPPORTED_DOCUMENT_EXTENSIONS, true)) {
+                return response()->json([
+                    'message' => 'Unsupported document type. Supported types are: '.implode(', ', self::SUPPORTED_DOCUMENT_EXTENSIONS).'.',
+                ], 422);
+            }
+
             $filename = Str::uuid()->toString().'.'.$extension;
             $targetPath = $disk->path($directory);
 
@@ -118,7 +127,12 @@ class ProjectDocumentController extends Controller
             'mime_type' => $clientMimeType,
             'file_size' => $fileSize,
             'status' => 'pending',
-            'ingestion_type' => 'pdf',
+            'ingestion_type' => $extension,
+            'metadata' => [
+                'file_type' => $extension,
+                'original_name' => $originalName,
+                'last_status' => 'queued',
+            ],
         ]);
 
         ProcessProjectDocumentJob::dispatch($document->id);
@@ -287,4 +301,3 @@ class ProjectDocumentController extends Controller
         ];
     }
 }
-
