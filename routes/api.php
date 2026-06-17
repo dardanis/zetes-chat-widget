@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 // COMMENTED: registration disabled
 // use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConfluenceIntegrationController;
+use App\Http\Controllers\OllamaProxyController;
 use App\Http\Controllers\ProjectChatController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectDocumentController;
@@ -20,6 +21,9 @@ Route::middleware(['widget.request', 'throttle:widget-chat-create'])
     ->post('/widget/{widgetKey}/chats', [WidgetChatController::class, 'createSession']);
 Route::middleware(['widget.request', 'throttle:widget-chat-message'])
     ->post('/widget/{widgetKey}/chats/message', [WidgetChatController::class, 'sendMessage']);
+
+//Route::any('/ollama/{path?}', OllamaProxyController::class)
+//    ->where('path', '.*');
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/user', fn (Request $request) => $request->user());

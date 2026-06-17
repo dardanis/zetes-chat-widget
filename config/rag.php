@@ -42,6 +42,7 @@ return [
         'embedding_model' => env('OLLAMA_EMBEDDING_MODEL', 'nomic-embed-text'),
         'generation_model' => env('OLLAMA_GENERATION_MODEL', 'llama3'),
         'timeout' => (int) env('OLLAMA_TIMEOUT_SECONDS', 120),
+        'proxy_allow_remote' => (bool) env('OLLAMA_PROXY_ALLOW_REMOTE', false),
     ],
 
     'confluence' => [
