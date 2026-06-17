@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { countryLabel } from '../core/countries';
@@ -24,7 +24,7 @@ import { Country, RagApiService, Tenant } from '../core/rag-api.service';
       <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
         <label class="block">
           <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Search tenants</span>
-          <input name="tenantSearch" [(ngModel)]="searchTerm" placeholder="Search by tenant, country, or status" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition placeholder:text-[var(--app-text-muted)] focus:ring-2" />
+          <input name="tenantSearch" [(ngModel)]="searchTerm" (ngModelChange)="searchTenants()" placeholder="Search by tenant, country, or status" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition placeholder:text-[var(--app-text-muted)] focus:ring-2" />
         </label>
       </div>
 
@@ -78,7 +78,7 @@ import { Country, RagApiService, Tenant } from '../core/rag-api.service';
         </div>
       } @else {
         <div class="space-y-3">
-          @for (tenant of filteredTenants(); track tenant.id) {
+          @for (tenant of tenants(); track tenant.id) {
             <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
               @if (editingId() === tenant.id) {
                 <!-- Edit mode -->
@@ -140,30 +140,13 @@ export class TenantsPageComponent {
   protected readonly isCreateModalOpen = signal(false);
   protected readonly editingId = signal<number | null>(null);
   protected readonly deletingId = signal<number | null>(null);
-  protected readonly filteredTenants = computed(() => {
-    const term = this.searchTerm.trim().toLowerCase();
-
-    if (!term) {
-      return this.tenants();
-    }
-
-    return this.tenants().filter((tenant) => {
-      const haystack = [
-        tenant.name,
-        tenant.status,
-        tenant.country_code,
-        this.labelCountry(tenant.country_code),
-      ].join(' ').toLowerCase();
-
-      return haystack.includes(term);
-    });
-  });
 
   protected newName = '';
   protected newCountryCode = '';
   protected editName = '';
   protected editCountryCode = '';
   protected searchTerm = '';
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.loadTenants();
@@ -179,7 +162,7 @@ export class TenantsPageComponent {
 
     this.api.createTenant({ name: this.newName.trim(), country_code: this.newCountryCode, status: 'active' }).subscribe({
       next: ({ data }) => {
-        this.tenants.update((t) => [data, ...t]);
+        this.loadTenantResults();
         this.newName = '';
         this.newCountryCode = '';
         this.closeCreateModal();
@@ -240,11 +223,29 @@ export class TenantsPageComponent {
   }
 
   private loadTenants(): void {
-    forkJoin([this.api.listTenants(), this.api.listCountries()]).subscribe({
+    forkJoin([this.api.listTenants({ search: this.searchTerm.trim() }), this.api.listCountries()]).subscribe({
       next: ([tenants, countries]) => {
         this.tenants.set(tenants.data);
         this.countries.set(countries.data);
       },
+      complete: () => this.isLoading.set(false),
+      error: () => this.isLoading.set(false),
+    });
+  }
+
+  protected searchTenants(): void {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+
+    this.searchTimer = setTimeout(() => this.loadTenantResults(), 250);
+  }
+
+  private loadTenantResults(): void {
+    this.isLoading.set(true);
+
+    this.api.listTenants({ search: this.searchTerm.trim() }).subscribe({
+      next: ({ data }) => this.tenants.set(data),
       complete: () => this.isLoading.set(false),
       error: () => this.isLoading.set(false),
     });

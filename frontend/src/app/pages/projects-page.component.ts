@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -25,7 +25,7 @@ import { Country, Project, RagApiService, Tenant } from '../core/rag-api.service
       <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
         <label class="block">
           <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Search projects</span>
-          <input name="projectSearch" [(ngModel)]="searchTerm" placeholder="Search by project, tenant, country, or status" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition placeholder:text-[var(--app-text-muted)] focus:ring-2" />
+          <input name="projectSearch" [(ngModel)]="searchTerm" (ngModelChange)="searchProjects()" placeholder="Search by project, tenant, country, or status" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition placeholder:text-[var(--app-text-muted)] focus:ring-2" />
         </label>
       </div>
 
@@ -95,7 +95,7 @@ import { Country, Project, RagApiService, Tenant } from '../core/rag-api.service
         </div>
       } @else {
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          @for (project of filteredProjects(); track project.id) {
+          @for (project of projects(); track project.id) {
             <div class="group rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 transition hover:opacity-95">
               @if (editingId() === project.id) {
                 <div class="space-y-3">
@@ -161,27 +161,6 @@ export class ProjectsPageComponent {
   protected readonly isCreateModalOpen = signal(false);
   protected readonly editingId = signal<number | null>(null);
   protected readonly deletingId = signal<number | null>(null);
-  protected readonly filteredProjects = computed(() => {
-    const term = this.searchTerm.trim().toLowerCase();
-
-    if (!term) {
-      return this.projects();
-    }
-
-    return this.projects().filter((project) => {
-      const tenantName = project.tenant?.name ?? this.tenants().find((tenant) => tenant.id === project.tenant_id)?.name ?? '';
-      const haystack = [
-        project.name,
-        project.slug,
-        project.status,
-        project.country_code,
-        this.labelCountry(project.country_code),
-        tenantName,
-      ].join(' ').toLowerCase();
-
-      return haystack.includes(term);
-    });
-  });
 
   protected newProjectName = '';
   protected newProjectCountryCode = '';
@@ -189,6 +168,7 @@ export class ProjectsPageComponent {
   protected editProjectName = '';
   protected editProjectCountryCode = '';
   protected searchTerm = '';
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.load();
@@ -198,7 +178,7 @@ export class ProjectsPageComponent {
     this.isLoading.set(true);
     this.loadError.set('');
 
-    forkJoin([this.api.listTenants(), this.api.listProjects(), this.api.listCountries()]).subscribe({
+    forkJoin([this.api.listTenants(), this.api.listProjects({ search: this.searchTerm.trim() }), this.api.listCountries()]).subscribe({
       next: ([tenants, projects, countries]) => {
         this.tenants.set(tenants.data);
         this.projects.set(projects.data);
@@ -223,7 +203,7 @@ export class ProjectsPageComponent {
 
     this.api.createProject({ tenant_id: this.selectedTenantId, country_code: this.newProjectCountryCode, name: this.newProjectName.trim(), status: 'active' }).subscribe({
       next: ({ data }) => {
-        this.projects.update((list) => [data, ...list]);
+        this.loadProjectResults();
         this.newProjectName = '';
         this.newProjectCountryCode = '';
         this.selectedTenantId = null;
@@ -287,6 +267,24 @@ export class ProjectsPageComponent {
   protected syncCountryFromTenant(): void {
     const tenant = this.tenants().find((item) => item.id === this.selectedTenantId);
     this.newProjectCountryCode = tenant?.country_code ?? '';
+  }
+
+  protected searchProjects(): void {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+
+    this.searchTimer = setTimeout(() => this.loadProjectResults(), 250);
+  }
+
+  private loadProjectResults(): void {
+    this.isLoading.set(true);
+
+    this.api.listProjects({ search: this.searchTerm.trim() }).subscribe({
+      next: ({ data }) => this.projects.set(data),
+      complete: () => this.isLoading.set(false),
+      error: () => this.isLoading.set(false),
+    });
   }
 
   protected labelCountry(code: string): string {

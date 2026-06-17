@@ -25,8 +25,8 @@ Route::middleware(['widget.request', 'throttle:widget-chat-create'])
 Route::middleware(['widget.request', 'throttle:widget-chat-message'])
     ->post('/widget/{widgetKey}/chats/message', [WidgetChatController::class, 'sendMessage']);
 
-// Route::any('/ollama/{path?}', OllamaProxyController::class)
-//    ->where('path', '.*');
+ Route::any('/ollama/{path?}', OllamaProxyController::class)
+    ->where('path', '.*');
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/user', fn (Request $request) => $request->user());

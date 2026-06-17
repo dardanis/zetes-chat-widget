@@ -16,12 +16,26 @@ class TenantController extends Controller
     {
         abort_unless($this->access->can($request->user(), 'tenants.view'), 403);
 
-        return response()->json([
-            'data' => $this->access->scopeTenantsFor(
-                $request->user(),
-                Tenant::query()->with('country')
-            )->latest('id')->get(),
-        ]);
+        $search = trim((string) $request->query('search', $request->query('q', '')));
+
+        $query = $this->access->scopeTenantsFor(
+            $request->user(),
+            Tenant::query()->with('country')
+        );
+
+        if ($search !== '') {
+            $query->where(function ($query) use ($search): void {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhere('country_code', 'like', "%{$search}%")
+                    ->orWhereHas('country', function ($query) use ($search): void {
+                        $query->where('name', 'like', "%{$search}%")
+                            ->orWhere('code', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        return response()->json(['data' => $query->latest('id')->get()]);
     }
 
     public function store(Request $request): JsonResponse

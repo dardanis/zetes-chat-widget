@@ -239,8 +239,10 @@ export class RagApiService {
     );
   }
 
-  listTenants(): Observable<ApiListResponse<Tenant>> {
-    return this.http.get<ApiListResponse<Tenant>>('/api/tenants');
+  listTenants(options?: { search?: string }): Observable<ApiListResponse<Tenant>> {
+    return this.http.get<ApiListResponse<Tenant>>('/api/tenants', {
+      params: this.compactParams({ search: options?.search }),
+    });
   }
 
   createTenant(payload: { name: string; country_code: string; status?: string }): Observable<ApiItemResponse<Tenant>> {
@@ -261,8 +263,10 @@ export class RagApiService {
     );
   }
 
-  listProjects(): Observable<ApiListResponse<Project>> {
-    return this.http.get<ApiListResponse<Project>>('/api/projects');
+  listProjects(options?: { search?: string }): Observable<ApiListResponse<Project>> {
+    return this.http.get<ApiListResponse<Project>>('/api/projects', {
+      params: this.compactParams({ search: options?.search }),
+    });
   }
 
   createProject(payload: { tenant_id: number; name: string; country_code: string; status?: string }): Observable<ApiItemResponse<Project>> {
@@ -414,6 +418,14 @@ export class RagApiService {
         chat_session_id: chatSessionId,
         message,
       }))
+    );
+  }
+
+  private compactParams(params: Record<string, string | number | boolean | null | undefined>): Record<string, string> {
+    return Object.fromEntries(
+      Object.entries(params)
+        .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+        .map(([key, value]) => [key, String(value)])
     );
   }
 }

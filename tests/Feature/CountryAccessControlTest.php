@@ -97,6 +97,65 @@ class CountryAccessControlTest extends TestCase
             ->assertJsonPath('data.0.code', 'DE');
     }
 
+    public function test_tenant_search_runs_on_backend_inside_assigned_countries(): void
+    {
+        $manager = User::factory()->create(['role' => 'manager']);
+        $manager->countries()->sync(['DE']);
+
+        Tenant::query()->create(['name' => 'Berlin Operations', 'country_code' => 'DE']);
+        Tenant::query()->create(['name' => 'Paris Operations', 'country_code' => 'FR']);
+        Tenant::query()->create(['name' => 'Hamburg Support', 'country_code' => 'DE']);
+
+        $this->actingAs($manager)
+            ->getJson('/api/tenants?search=operations')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'Berlin Operations');
+
+        $this->actingAs($manager)
+            ->getJson('/api/tenants?search=germany')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+    }
+
+    public function test_project_search_runs_on_backend_inside_assigned_countries(): void
+    {
+        $manager = User::factory()->create(['role' => 'manager']);
+        $manager->countries()->sync(['DE']);
+
+        $germanTenant = Tenant::query()->create(['name' => 'Berlin Tenant', 'country_code' => 'DE']);
+        $frenchTenant = Tenant::query()->create(['name' => 'Paris Tenant', 'country_code' => 'FR']);
+
+        Project::query()->create([
+            'tenant_id' => $germanTenant->id,
+            'country_code' => 'DE',
+            'owner_id' => $manager->id,
+            'name' => 'Knowledge Hub',
+            'slug' => 'knowledge-hub',
+            'widget_key' => 'wk-'.str_repeat('k', 30),
+        ]);
+        Project::query()->create([
+            'tenant_id' => $frenchTenant->id,
+            'country_code' => 'FR',
+            'owner_id' => $manager->id,
+            'name' => 'Knowledge Hub France',
+            'slug' => 'knowledge-hub-france',
+            'widget_key' => 'wk-'.str_repeat('p', 30),
+        ]);
+
+        $this->actingAs($manager)
+            ->getJson('/api/projects?search=knowledge')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'Knowledge Hub');
+
+        $this->actingAs($manager)
+            ->getJson('/api/projects?search=berlin')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.tenant.name', 'Berlin Tenant');
+    }
+
     public function test_admin_can_delete_users(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

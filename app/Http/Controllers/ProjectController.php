@@ -19,10 +19,30 @@ class ProjectController extends Controller
     {
         abort_unless($this->access->can($request->user(), 'projects.view'), 403);
 
-        $projects = $this->access->scopeProjectsFor(
+        $search = trim((string) $request->query('search', $request->query('q', '')));
+
+        $query = $this->access->scopeProjectsFor(
             $request->user(),
             Project::query()->with(['country', 'tenant'])
-        )->latest('id')->get();
+        );
+
+        if ($search !== '') {
+            $query->where(function ($query) use ($search): void {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('slug', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhere('country_code', 'like', "%{$search}%")
+                    ->orWhereHas('country', function ($query) use ($search): void {
+                        $query->where('name', 'like', "%{$search}%")
+                            ->orWhere('code', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('tenant', function ($query) use ($search): void {
+                        $query->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $projects = $query->latest('id')->get();
 
         return response()->json(['data' => $projects]);
     }
