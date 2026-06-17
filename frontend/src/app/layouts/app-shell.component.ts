@@ -15,6 +15,7 @@ import { SidebarComponent } from './sidebar.component';
         [collapsed]="sidebarCollapsed()"
         [mobileOpen]="sidebarMobileOpen()"
         [projectId]="activeProjectId()"
+        [showUsers]="auth.user()?.role === 'admin'"
         (closeMobile)="closeMobileSidebar()"
       />
 

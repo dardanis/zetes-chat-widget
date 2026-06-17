@@ -6,20 +6,42 @@ import { AuthService } from './auth.service';
 export interface Tenant {
   id: number;
   name: string;
+  country_code: string;
+  status: 'active' | 'inactive' | string;
   created_at?: string;
+  country?: Country;
 }
 
 export interface Project {
   id: number;
   tenant_id: number;
+  country_code: string;
   owner_id: number;
   name: string;
   slug: string;
   widget_key: string;
   widget_secret?: string | null;
+  status: 'active' | 'inactive' | string;
   created_at?: string;
   updated_at?: string;
   tenant?: Tenant;
+  country?: Country;
+}
+
+export interface Country {
+  code: string;
+  name: string;
+  status: 'active' | 'inactive' | string;
+}
+
+export interface ManagedUser {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'manager' | string;
+  status: 'active' | 'inactive' | string;
+  country_codes: string[];
+  countries?: Country[];
 }
 
 // ...existing interfaces...
@@ -185,19 +207,51 @@ export class RagApiService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
 
+  listCountries(): Observable<ApiListResponse<Country>> {
+    return this.http.get<ApiListResponse<Country>>('/api/countries');
+  }
+
+  listUsers(): Observable<ApiListResponse<ManagedUser>> {
+    return this.http.get<ApiListResponse<ManagedUser>>('/api/admin/users');
+  }
+
+  createUser(payload: { name: string; email: string; password: string; role: string; status: string; country_codes: string[] }): Observable<ApiItemResponse<ManagedUser>> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.post<ApiItemResponse<ManagedUser>>('/api/admin/users', payload))
+    );
+  }
+
+  updateUser(id: number, payload: Partial<{ name: string; email: string; role: string; status: string; country_codes: string[] }>): Observable<ApiItemResponse<ManagedUser>> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.put<ApiItemResponse<ManagedUser>>(`/api/admin/users/${id}`, payload))
+    );
+  }
+
+  deleteUser(id: number): Observable<void> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.delete<void>(`/api/admin/users/${id}`))
+    );
+  }
+
+  changeOwnPassword(payload: { current_password: string; password: string; password_confirmation: string }): Observable<{ message: string }> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.post<{ message: string }>('/api/account/password', payload))
+    );
+  }
+
   listTenants(): Observable<ApiListResponse<Tenant>> {
     return this.http.get<ApiListResponse<Tenant>>('/api/tenants');
   }
 
-  createTenant(name: string): Observable<ApiItemResponse<Tenant>> {
+  createTenant(payload: { name: string; country_code: string; status?: string }): Observable<ApiItemResponse<Tenant>> {
     return this.auth.refreshCsrf().pipe(
-      switchMap(() => this.http.post<ApiItemResponse<Tenant>>('/api/tenants', { name }))
+      switchMap(() => this.http.post<ApiItemResponse<Tenant>>('/api/tenants', payload))
     );
   }
 
-  updateTenant(id: number, name: string): Observable<ApiItemResponse<Tenant>> {
+  updateTenant(id: number, payload: { name: string; country_code: string; status?: string }): Observable<ApiItemResponse<Tenant>> {
     return this.auth.refreshCsrf().pipe(
-      switchMap(() => this.http.put<ApiItemResponse<Tenant>>(`/api/tenants/${id}`, { name }))
+      switchMap(() => this.http.put<ApiItemResponse<Tenant>>(`/api/tenants/${id}`, payload))
     );
   }
 
@@ -211,15 +265,15 @@ export class RagApiService {
     return this.http.get<ApiListResponse<Project>>('/api/projects');
   }
 
-  createProject(payload: { tenant_id: number; name: string }): Observable<ApiItemResponse<Project>> {
+  createProject(payload: { tenant_id: number; name: string; country_code: string; status?: string }): Observable<ApiItemResponse<Project>> {
     return this.auth.refreshCsrf().pipe(
       switchMap(() => this.http.post<ApiItemResponse<Project>>('/api/projects', payload))
     );
   }
 
-  updateProject(id: number, name: string): Observable<ApiItemResponse<Project>> {
+  updateProject(id: number, payload: { name: string; country_code: string; status?: string }): Observable<ApiItemResponse<Project>> {
     return this.auth.refreshCsrf().pipe(
-      switchMap(() => this.http.put<ApiItemResponse<Project>>(`/api/projects/${id}`, { name }))
+      switchMap(() => this.http.put<ApiItemResponse<Project>>(`/api/projects/${id}`, payload))
     );
   }
 
@@ -363,5 +417,3 @@ export class RagApiService {
     );
   }
 }
-
-

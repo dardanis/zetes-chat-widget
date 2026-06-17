@@ -12,6 +12,7 @@ import { ProjectsPageComponent } from './pages/projects-page.component';
 // import { RegisterPageComponent } from './pages/register-page.component';
 import { SettingsPageComponent } from './pages/settings-page.component';
 import { TenantsPageComponent } from './pages/tenants-page.component';
+import { UsersPageComponent } from './pages/users-page.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'app/dashboard' },
@@ -27,6 +28,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: DashboardPageComponent },
       { path: 'tenants', component: TenantsPageComponent },
+      { path: 'users', component: UsersPageComponent },
       { path: 'projects', component: ProjectsPageComponent },
       {
         path: 'projects/:projectId',

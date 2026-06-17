@@ -3,12 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tenant extends Model
 {
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'country_code', 'status'];
+
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class, 'country_code', 'code');
+    }
 
     public function users(): BelongsToMany
     {
@@ -20,4 +26,3 @@ class Tenant extends Model
         return $this->hasMany(Project::class);
     }
 }
-

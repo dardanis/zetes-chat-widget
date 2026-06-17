@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 // COMMENTED: registration disabled
 // use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConfluenceIntegrationController;
+use App\Http\Controllers\CountryController;
 use App\Http\Controllers\OllamaProxyController;
 use App\Http\Controllers\ProjectChatController;
 use App\Http\Controllers\ProjectController;
@@ -22,14 +25,24 @@ Route::middleware(['widget.request', 'throttle:widget-chat-create'])
 Route::middleware(['widget.request', 'throttle:widget-chat-message'])
     ->post('/widget/{widgetKey}/chats/message', [WidgetChatController::class, 'sendMessage']);
 
-//Route::any('/ollama/{path?}', OllamaProxyController::class)
+// Route::any('/ollama/{path?}', OllamaProxyController::class)
 //    ->where('path', '.*');
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/user', fn (Request $request) => $request->user());
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
+    Route::post('/account/password', [AccountController::class, 'changePassword']);
 
     Route::get('/stats', StatsController::class);
+
+    Route::get('/countries', [CountryController::class, 'index']);
+    Route::put('/countries/{country}', [CountryController::class, 'update']);
+
+    Route::get('/admin/users', [UserController::class, 'index']);
+    Route::post('/admin/users', [UserController::class, 'store']);
+    Route::put('/admin/users/{user}', [UserController::class, 'update']);
+    Route::post('/admin/users/{user}/change-password', [UserController::class, 'changePassword']);
+    Route::delete('/admin/users/{user}', [UserController::class, 'destroy']);
 
     Route::get('/tenants', [TenantController::class, 'index']);
     Route::post('/tenants', [TenantController::class, 'store']);

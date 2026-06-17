@@ -33,6 +33,14 @@ class AuthenticatedSessionController extends Controller
             $request->session()->regenerate();
         }
 
+        if ($request->user()?->status !== 'active') {
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => ['This user is inactive.'],
+            ]);
+        }
+
         return response()->json([
             'user' => $request->user(),
         ]);
@@ -50,4 +58,3 @@ class AuthenticatedSessionController extends Controller
         return response()->json(status: 204);
     }
 }
-

@@ -5,16 +5,20 @@ namespace App\Http\Controllers;
 use App\Jobs\SyncProjectConfluenceSpaceJob;
 use App\Models\AtlassianConnection;
 use App\Models\ProjectConfluenceSpace;
+use App\Models\Tenant;
+use App\Services\AccessControlService;
 use App\Services\Rag\ConfluenceApiService;
 use App\Services\Rag\ProjectAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class ConfluenceIntegrationController extends Controller
 {
-    public function __construct(private readonly ProjectAccessService $accessService) {}
+    public function __construct(
+        private readonly ProjectAccessService $accessService,
+        private readonly AccessControlService $access,
+    ) {}
 
     public function indexConnections(Request $request, int $tenant): JsonResponse
     {
@@ -235,9 +239,8 @@ class ConfluenceIntegrationController extends Controller
 
     private function ensureTenantMembership(Request $request, int $tenantId): void
     {
-        $isMember = $request->user()->tenants()->whereKey($tenantId)->exists();
+        $tenant = Tenant::query()->findOrFail($tenantId);
 
-        abort_unless($isMember, 403);
+        abort_unless($this->access->canAccessTenant($request->user(), $tenant), 403);
     }
 }
-

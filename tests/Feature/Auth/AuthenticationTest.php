@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -94,5 +95,35 @@ class AuthenticationTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('user.email', 'remember@example.com');
     }
-}
 
+    public function test_authenticated_user_can_change_own_password(): void
+    {
+        $user = User::factory()->create(['role' => 'manager']);
+
+        $this->actingAs($user)
+            ->postJson('/api/account/password', [
+                'current_password' => 'password',
+                'password' => 'new-secure-password',
+                'password_confirmation' => 'new-secure-password',
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Password changed.');
+
+        $this->assertTrue(Hash::check('new-secure-password', $user->fresh()->password));
+    }
+
+    public function test_authenticated_user_must_provide_current_password_to_change_own_password(): void
+    {
+        $user = User::factory()->create(['role' => 'manager']);
+
+        $this->actingAs($user)
+            ->postJson('/api/account/password', [
+                'current_password' => 'wrong-password',
+                'password' => 'new-secure-password',
+                'password_confirmation' => 'new-secure-password',
+            ])
+            ->assertUnprocessable();
+
+        $this->assertTrue(Hash::check('password', $user->fresh()->password));
+    }
+}

@@ -19,6 +19,7 @@ class ProjectManagementTest extends TestCase
         $response = $this->actingAs($user)
             ->postJson('/api/projects', [
                 'tenant_id' => $tenant->id,
+                'country_code' => 'DE',
                 'name' => 'Knowledge Base',
             ]);
 
@@ -42,6 +43,7 @@ class ProjectManagementTest extends TestCase
         $response = $this->actingAs($user)
             ->postJson('/api/projects', [
                 'tenant_id' => $tenant->id,
+                'country_code' => 'DE',
                 'name' => 'Secret Project',
             ]);
 
@@ -58,6 +60,7 @@ class ProjectManagementTest extends TestCase
 
         Project::query()->create([
             'tenant_id' => $tenant->id,
+            'country_code' => 'DE',
             'owner_id' => $user->id,
             'name' => 'Project Alpha',
             'slug' => 'project-alpha',
@@ -74,17 +77,20 @@ class ProjectManagementTest extends TestCase
 
     public function test_user_cannot_see_projects_from_other_tenants(): void
     {
-        $userA = User::factory()->create();
-        $userB = User::factory()->create();
+        $userA = User::factory()->create(['role' => 'manager']);
+        $userB = User::factory()->create(['role' => 'manager']);
+        $userA->countries()->sync(['DE']);
+        $userB->countries()->sync(['FR']);
 
-        $tenantA = Tenant::query()->create(['name' => 'Tenant A']);
-        $tenantB = Tenant::query()->create(['name' => 'Tenant B']);
+        $tenantA = Tenant::query()->create(['name' => 'Tenant A', 'country_code' => 'DE']);
+        $tenantB = Tenant::query()->create(['name' => 'Tenant B', 'country_code' => 'FR']);
 
         $tenantA->users()->attach($userA->id, ['role' => 'owner']);
         $tenantB->users()->attach($userB->id, ['role' => 'owner']);
 
         Project::query()->create([
             'tenant_id' => $tenantA->id,
+            'country_code' => 'DE',
             'owner_id' => $userA->id,
             'name' => 'Private Project',
             'slug' => 'private-project',
@@ -99,12 +105,14 @@ class ProjectManagementTest extends TestCase
 
     public function test_user_cannot_create_project_in_foreign_tenant(): void
     {
-        $user = User::factory()->create();
-        $foreignTenant = Tenant::query()->create(['name' => 'Foreign']);
+        $user = User::factory()->create(['role' => 'manager']);
+        $user->countries()->sync(['DE']);
+        $foreignTenant = Tenant::query()->create(['name' => 'Foreign', 'country_code' => 'FR']);
 
         $this->actingAs($user)
             ->postJson('/api/projects', [
                 'tenant_id' => $foreignTenant->id,
+                'country_code' => 'FR',
                 'name' => 'Intruder Project',
             ])
             ->assertForbidden();
@@ -132,6 +140,7 @@ class ProjectManagementTest extends TestCase
 
         $project = Project::query()->create([
             'tenant_id' => $tenant->id,
+            'country_code' => 'DE',
             'owner_id' => $user->id,
             'name' => 'Old Name',
             'slug' => 'old-name',
@@ -139,7 +148,7 @@ class ProjectManagementTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->putJson("/api/projects/{$project->id}", ['name' => 'New Name'])
+            ->putJson("/api/projects/{$project->id}", ['name' => 'New Name', 'country_code' => 'DE'])
             ->assertOk()
             ->assertJsonPath('data.name', 'New Name');
 
@@ -148,13 +157,15 @@ class ProjectManagementTest extends TestCase
 
     public function test_user_cannot_update_foreign_project(): void
     {
-        $user = User::factory()->create();
-        $foreignTenant = Tenant::query()->create(['name' => 'Foreign']);
+        $user = User::factory()->create(['role' => 'manager']);
+        $user->countries()->sync(['DE']);
+        $foreignTenant = Tenant::query()->create(['name' => 'Foreign', 'country_code' => 'FR']);
         $foreignUser = User::factory()->create();
         $foreignTenant->users()->attach($foreignUser->id, ['role' => 'owner']);
 
         $project = Project::query()->create([
             'tenant_id' => $foreignTenant->id,
+            'country_code' => 'FR',
             'owner_id' => $foreignUser->id,
             'name' => 'Their Project',
             'slug' => 'their-project',
@@ -172,6 +183,7 @@ class ProjectManagementTest extends TestCase
 
         $project = Project::query()->create([
             'tenant_id' => $tenant->id,
+            'country_code' => 'DE',
             'owner_id' => $user->id,
             'name' => 'To Delete',
             'slug' => 'to-delete',
@@ -187,13 +199,15 @@ class ProjectManagementTest extends TestCase
 
     public function test_user_cannot_delete_foreign_project(): void
     {
-        $user = User::factory()->create();
-        $foreignTenant = Tenant::query()->create(['name' => 'Other Org']);
+        $user = User::factory()->create(['role' => 'manager']);
+        $user->countries()->sync(['DE']);
+        $foreignTenant = Tenant::query()->create(['name' => 'Other Org', 'country_code' => 'FR']);
         $foreignUser = User::factory()->create();
         $foreignTenant->users()->attach($foreignUser->id, ['role' => 'owner']);
 
         $project = Project::query()->create([
             'tenant_id' => $foreignTenant->id,
+            'country_code' => 'FR',
             'owner_id' => $foreignUser->id,
             'name' => 'Protected',
             'slug' => 'protected',
@@ -211,12 +225,9 @@ class ProjectManagementTest extends TestCase
     private function createUserWithTenant(): array
     {
         $user = User::factory()->create();
-        $tenant = Tenant::query()->create(['name' => 'Test Tenant']);
+        $tenant = Tenant::query()->create(['name' => 'Test Tenant', 'country_code' => 'DE']);
         $tenant->users()->attach($user->id, ['role' => 'owner']);
 
         return [$user, $tenant];
     }
 }
-
-
-

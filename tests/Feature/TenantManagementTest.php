@@ -16,12 +16,12 @@ class TenantManagementTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)
-            ->postJson('/api/tenants', ['name' => 'Acme Corp']);
+            ->postJson('/api/tenants', ['name' => 'Acme Corp', 'country_code' => 'DE']);
 
         $response->assertCreated()
             ->assertJsonPath('data.name', 'Acme Corp');
 
-        $this->assertDatabaseHas('tenants', ['name' => 'Acme Corp']);
+        $this->assertDatabaseHas('tenants', ['name' => 'Acme Corp', 'country_code' => 'DE']);
 
         // Creator is attached as owner
         $tenant = Tenant::query()->where('name', 'Acme Corp')->first();
@@ -31,12 +31,13 @@ class TenantManagementTest extends TestCase
 
     public function test_authenticated_user_can_list_their_tenants(): void
     {
-        $user = User::factory()->create();
-        $tenant = Tenant::query()->create(['name' => 'My Tenant']);
+        $user = User::factory()->create(['role' => 'manager']);
+        $user->countries()->sync(['DE']);
+        $tenant = Tenant::query()->create(['name' => 'My Tenant', 'country_code' => 'DE']);
         $tenant->users()->attach($user->id, ['role' => 'owner']);
 
         // Another tenant the user is NOT a member of
-        Tenant::query()->create(['name' => 'Other Tenant']);
+        Tenant::query()->create(['name' => 'Other Tenant', 'country_code' => 'FR']);
 
         $response = $this->actingAs($user)
             ->getJson('/api/tenants');
@@ -71,11 +72,11 @@ class TenantManagementTest extends TestCase
     public function test_user_can_update_their_tenant(): void
     {
         $user = User::factory()->create();
-        $tenant = Tenant::query()->create(['name' => 'Old Name']);
+        $tenant = Tenant::query()->create(['name' => 'Old Name', 'country_code' => 'DE']);
         $tenant->users()->attach($user->id, ['role' => 'owner']);
 
         $this->actingAs($user)
-            ->putJson("/api/tenants/{$tenant->id}", ['name' => 'New Name'])
+            ->putJson("/api/tenants/{$tenant->id}", ['name' => 'New Name', 'country_code' => 'DE'])
             ->assertOk()
             ->assertJsonPath('data.name', 'New Name');
 
@@ -84,8 +85,9 @@ class TenantManagementTest extends TestCase
 
     public function test_user_cannot_update_foreign_tenant(): void
     {
-        $user = User::factory()->create();
-        $tenant = Tenant::query()->create(['name' => 'Foreign']);
+        $user = User::factory()->create(['role' => 'manager']);
+        $user->countries()->sync(['DE']);
+        $tenant = Tenant::query()->create(['name' => 'Foreign', 'country_code' => 'FR']);
 
         $this->actingAs($user)
             ->putJson("/api/tenants/{$tenant->id}", ['name' => 'Hijacked'])
@@ -95,7 +97,7 @@ class TenantManagementTest extends TestCase
     public function test_user_can_delete_their_tenant(): void
     {
         $user = User::factory()->create();
-        $tenant = Tenant::query()->create(['name' => 'To Delete']);
+        $tenant = Tenant::query()->create(['name' => 'To Delete', 'country_code' => 'DE']);
         $tenant->users()->attach($user->id, ['role' => 'owner']);
 
         $this->actingAs($user)
@@ -107,12 +109,12 @@ class TenantManagementTest extends TestCase
 
     public function test_user_cannot_delete_foreign_tenant(): void
     {
-        $user = User::factory()->create();
-        $tenant = Tenant::query()->create(['name' => 'Not Mine']);
+        $user = User::factory()->create(['role' => 'manager']);
+        $user->countries()->sync(['DE']);
+        $tenant = Tenant::query()->create(['name' => 'Not Mine', 'country_code' => 'FR']);
 
         $this->actingAs($user)
             ->deleteJson("/api/tenants/{$tenant->id}")
             ->assertForbidden();
     }
 }
-

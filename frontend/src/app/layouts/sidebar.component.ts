@@ -47,6 +47,14 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
               @if (!collapsed || mobileOpen) { <span>Projects</span> }
             </a>
           </li>
+          @if (showUsers) {
+            <li>
+              <a routerLink="/app/users" routerLinkActive="bg-[var(--app-surface-2)] text-[var(--app-accent)]" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)] hover:text-[var(--app-text)]" (click)="onNavClick()">
+                <svg class="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM2 16a6 6 0 1112 0H2zm13-7a1 1 0 011 1v2h2a1 1 0 110 2h-2v2a1 1 0 11-2 0v-2h-2a1 1 0 110-2h2v-2a1 1 0 011-1z"/></svg>
+                @if (!collapsed || mobileOpen) { <span>Users</span> }
+              </a>
+            </li>
+          }
         </ul>
 
         @if (projectId) {
@@ -104,6 +112,7 @@ export class SidebarComponent {
   @Input() collapsed = false;
   @Input() mobileOpen = false;
   @Input() projectId: number | null = null;
+  @Input() showUsers = false;
 
   @Output() closeMobile = new EventEmitter<void>();
 

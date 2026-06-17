@@ -1,9 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { Project, RagApiService, Tenant } from '../core/rag-api.service';
+import { countryLabel } from '../core/countries';
+import { Country, Project, RagApiService, Tenant } from '../core/rag-api.service';
 
 @Component({
   selector: 'app-projects-page',
@@ -11,32 +12,74 @@ import { Project, RagApiService, Tenant } from '../core/rag-api.service';
   imports: [FormsModule, RouterLink],
   template: `
     <section class="space-y-6">
-      <div>
-        <h2 class="text-xl font-semibold text-[var(--app-text)]">Projects</h2>
-        <p class="mt-1 text-sm text-[var(--app-text-muted)]">Manage your RAG projects. Each project has its own document knowledge base and chat widget.</p>
-      </div>
-
-      <!-- Create project -->
-      <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
-        <h3 class="text-sm font-semibold text-[var(--app-text)]">Create project</h3>
-
-        @if (createError()) {
-          <p class="mt-3 rounded-md border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 px-3 py-2 text-sm text-[var(--app-danger)]">{{ createError() }}</p>
-        }
-
-        <div class="mt-3 flex flex-col gap-3 sm:flex-row">
-          <select name="tenantId" [(ngModel)]="selectedTenantId" class="min-w-0 flex-1 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 focus:ring-2">
-            <option [ngValue]="null">Select tenant</option>
-            @for (tenant of tenants(); track tenant.id) {
-              <option [ngValue]="tenant.id">{{ tenant.name }}</option>
-            }
-          </select>
-          <input name="projectName" [(ngModel)]="newProjectName" placeholder="Project name" class="min-w-0 flex-1 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition placeholder:text-[var(--app-text-muted)] focus:ring-2" />
-          <button type="button" (click)="createProject()" [disabled]="isCreating()" class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60">
-            {{ isCreating() ? 'Creating...' : 'Create project' }}
-          </button>
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-[var(--app-text)]">Projects</h2>
+          <p class="mt-1 text-sm text-[var(--app-text-muted)]">Manage RAG projects by tenant and country.</p>
         </div>
+        <button type="button" (click)="openCreateModal()" class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+          Create project
+        </button>
       </div>
+
+      <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+        <label class="block">
+          <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Search projects</span>
+          <input name="projectSearch" [(ngModel)]="searchTerm" placeholder="Search by project, tenant, country, or status" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition placeholder:text-[var(--app-text-muted)] focus:ring-2" />
+        </label>
+      </div>
+
+      @if (isCreateModalOpen()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm" (click)="closeCreateModal()">
+          <form class="w-full max-w-2xl overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-2xl" (click)="$event.stopPropagation()" (ngSubmit)="createProject()">
+            <div class="flex items-start justify-between gap-4 border-b border-[var(--app-border)] px-5 py-4">
+              <div>
+                <h3 class="text-base font-semibold text-[var(--app-text)]">Create project</h3>
+                <p class="mt-1 text-sm text-[var(--app-text-muted)]">Choose a tenant, country, and project name.</p>
+              </div>
+              <button type="button" (click)="closeCreateModal()" class="rounded-md px-2 py-1 text-sm text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Close</button>
+            </div>
+
+            <div class="space-y-4 px-5 py-4">
+              @if (createError()) {
+                <p class="rounded-md border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 px-3 py-2 text-sm text-[var(--app-danger)]">{{ createError() }}</p>
+              }
+
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Tenant</span>
+                <select name="tenantId" [(ngModel)]="selectedTenantId" (ngModelChange)="syncCountryFromTenant()" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 focus:ring-2">
+                  <option [ngValue]="null">Select tenant</option>
+                  @for (tenant of tenants(); track tenant.id) {
+                    <option [ngValue]="tenant.id">{{ tenant.name }} · {{ labelCountry(tenant.country_code) }}</option>
+                  }
+                </select>
+              </label>
+
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Country</span>
+                <select name="countryCode" [(ngModel)]="newProjectCountryCode" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 focus:ring-2">
+                  <option value="">Select country</option>
+                  @for (country of countries(); track country.code) {
+                    <option [value]="country.code">{{ country.name }} ({{ country.code }})</option>
+                  }
+                </select>
+              </label>
+
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Project name</span>
+                <input name="projectName" [(ngModel)]="newProjectName" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2" />
+              </label>
+            </div>
+
+            <div class="flex justify-end gap-2 border-t border-[var(--app-border)] px-5 py-4">
+              <button type="button" (click)="closeCreateModal()" class="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm font-semibold text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Cancel</button>
+              <button type="submit" [disabled]="isCreating()" class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60">
+                {{ isCreating() ? 'Creating...' : 'Create project' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      }
 
       <!-- Project list -->
       @if (isLoading()) {
@@ -52,11 +95,16 @@ import { Project, RagApiService, Tenant } from '../core/rag-api.service';
         </div>
       } @else {
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          @for (project of projects(); track project.id) {
+          @for (project of filteredProjects(); track project.id) {
             <div class="group rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 transition hover:opacity-95">
               @if (editingId() === project.id) {
                 <div class="space-y-3">
                   <input [(ngModel)]="editProjectName" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 focus:ring-2" />
+                  <select [(ngModel)]="editProjectCountryCode" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 focus:ring-2">
+                    @for (country of countries(); track country.code) {
+                      <option [value]="country.code">{{ country.name }} ({{ country.code }})</option>
+                    }
+                  </select>
                   <div class="flex gap-2">
                     <button type="button" (click)="saveEdit(project)" [disabled]="isSaving()" class="rounded-lg bg-[var(--app-accent)] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">Save</button>
                     <button type="button" (click)="cancelEdit()" class="rounded-lg border border-[var(--app-border)] px-3 py-1.5 text-sm text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Cancel</button>
@@ -75,9 +123,8 @@ import { Project, RagApiService, Tenant } from '../core/rag-api.service';
                   <div class="min-w-0">
                     <h3 class="truncate text-sm font-semibold text-[var(--app-text)]">{{ project.name }}</h3>
                     <p class="mt-1 truncate text-xs text-[var(--app-text-muted)]">{{ project.slug }}</p>
-                    <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">Widget key: {{ project.widget_key.slice(0, 12) }}…</p>
+                    <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">{{ labelCountry(project.country_code) }} · {{ project.status }}</p>
                   </div>
-                  <svg class="h-4 w-4 shrink-0 text-[var(--app-text-muted)] transition group-hover:text-[var(--app-text)]" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
                 </div>
 
                 <div class="mt-4 flex flex-wrap gap-2 border-t border-[var(--app-border)] pt-3">
@@ -91,7 +138,7 @@ import { Project, RagApiService, Tenant } from '../core/rag-api.service';
             <div class="py-12 text-center sm:col-span-2 xl:col-span-3">
               <svg class="mx-auto h-10 w-10 text-[var(--app-text-muted)]" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
               <p class="mt-3 text-sm text-[var(--app-text-muted)]">No projects found</p>
-              <p class="mt-1 text-xs text-[var(--app-text-muted)]">Create one above to get started.</p>
+              <p class="mt-1 text-xs text-[var(--app-text-muted)]">Adjust search or create a new project.</p>
             </div>
           }
         </div>
@@ -102,6 +149,7 @@ import { Project, RagApiService, Tenant } from '../core/rag-api.service';
 export class ProjectsPageComponent {
   private readonly api = inject(RagApiService);
 
+  protected readonly countries = signal<Country[]>([]);
   protected readonly tenants = signal<Tenant[]>([]);
   protected readonly projects = signal<Project[]>([]);
   protected readonly isLoading = signal(true);
@@ -110,12 +158,37 @@ export class ProjectsPageComponent {
   protected readonly isSaving = signal(false);
   protected readonly isDeleting = signal(false);
   protected readonly createError = signal('');
+  protected readonly isCreateModalOpen = signal(false);
   protected readonly editingId = signal<number | null>(null);
   protected readonly deletingId = signal<number | null>(null);
+  protected readonly filteredProjects = computed(() => {
+    const term = this.searchTerm.trim().toLowerCase();
+
+    if (!term) {
+      return this.projects();
+    }
+
+    return this.projects().filter((project) => {
+      const tenantName = project.tenant?.name ?? this.tenants().find((tenant) => tenant.id === project.tenant_id)?.name ?? '';
+      const haystack = [
+        project.name,
+        project.slug,
+        project.status,
+        project.country_code,
+        this.labelCountry(project.country_code),
+        tenantName,
+      ].join(' ').toLowerCase();
+
+      return haystack.includes(term);
+    });
+  });
 
   protected newProjectName = '';
+  protected newProjectCountryCode = '';
   protected selectedTenantId: number | null = null;
   protected editProjectName = '';
+  protected editProjectCountryCode = '';
+  protected searchTerm = '';
 
   constructor() {
     this.load();
@@ -125,10 +198,11 @@ export class ProjectsPageComponent {
     this.isLoading.set(true);
     this.loadError.set('');
 
-    forkJoin([this.api.listTenants(), this.api.listProjects()]).subscribe({
-      next: ([tenants, projects]) => {
+    forkJoin([this.api.listTenants(), this.api.listProjects(), this.api.listCountries()]).subscribe({
+      next: ([tenants, projects, countries]) => {
         this.tenants.set(tenants.data);
         this.projects.set(projects.data);
+        this.countries.set(countries.data);
       },
       error: () => {
         this.loadError.set('Unable to load projects.');
@@ -139,18 +213,21 @@ export class ProjectsPageComponent {
   }
 
   protected createProject(): void {
-    if (!this.newProjectName.trim() || !this.selectedTenantId) {
-      this.createError.set('Choose a tenant and provide a project name.');
+    if (!this.newProjectName.trim() || !this.selectedTenantId || !this.newProjectCountryCode) {
+      this.createError.set('Choose a tenant, country, and project name.');
       return;
     }
 
     this.isCreating.set(true);
     this.createError.set('');
 
-    this.api.createProject({ tenant_id: this.selectedTenantId, name: this.newProjectName.trim() }).subscribe({
+    this.api.createProject({ tenant_id: this.selectedTenantId, country_code: this.newProjectCountryCode, name: this.newProjectName.trim(), status: 'active' }).subscribe({
       next: ({ data }) => {
         this.projects.update((list) => [data, ...list]);
         this.newProjectName = '';
+        this.newProjectCountryCode = '';
+        this.selectedTenantId = null;
+        this.closeCreateModal();
       },
       error: (err: HttpErrorResponse) => {
         this.createError.set(err.error?.message ?? 'Unable to create project.');
@@ -163,6 +240,7 @@ export class ProjectsPageComponent {
   protected startEdit(project: Project): void {
     this.editingId.set(project.id);
     this.editProjectName = project.name;
+    this.editProjectCountryCode = project.country_code;
     this.deletingId.set(null);
   }
 
@@ -171,10 +249,10 @@ export class ProjectsPageComponent {
   }
 
   protected saveEdit(project: Project): void {
-    if (!this.editProjectName.trim()) return;
+    if (!this.editProjectName.trim() || !this.editProjectCountryCode) return;
     this.isSaving.set(true);
 
-    this.api.updateProject(project.id, this.editProjectName.trim()).subscribe({
+    this.api.updateProject(project.id, { name: this.editProjectName.trim(), country_code: this.editProjectCountryCode, status: project.status }).subscribe({
       next: ({ data }) => {
         this.projects.update((list) => list.map((p) => (p.id === data.id ? data : p)));
         this.editingId.set(null);
@@ -204,5 +282,27 @@ export class ProjectsPageComponent {
       error: () => this.isDeleting.set(false),
       complete: () => this.isDeleting.set(false),
     });
+  }
+
+  protected syncCountryFromTenant(): void {
+    const tenant = this.tenants().find((item) => item.id === this.selectedTenantId);
+    this.newProjectCountryCode = tenant?.country_code ?? '';
+  }
+
+  protected labelCountry(code: string): string {
+    return countryLabel(code, this.countries());
+  }
+
+  protected openCreateModal(): void {
+    this.createError.set('');
+    this.newProjectName = '';
+    this.newProjectCountryCode = '';
+    this.selectedTenantId = null;
+    this.isCreateModalOpen.set(true);
+  }
+
+  protected closeCreateModal(): void {
+    this.isCreateModalOpen.set(false);
+    this.createError.set('');
   }
 }
