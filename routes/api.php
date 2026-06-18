@@ -20,12 +20,13 @@ use Illuminate\Support\Facades\Route;
 // COMMENTED: registration disabled
 // Route::post('/register', RegisteredUserController::class);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-Route::middleware(['widget.request', 'throttle:widget-chat-create'])
+Route::get('/widget/{widgetKey}/settings', [WidgetChatController::class, 'settings']);
+Route::middleware('throttle:widget-chat-create')
     ->post('/widget/{widgetKey}/chats', [WidgetChatController::class, 'createSession']);
-Route::middleware(['widget.request', 'throttle:widget-chat-message'])
+Route::middleware('throttle:widget-chat-message')
     ->post('/widget/{widgetKey}/chats/message', [WidgetChatController::class, 'sendMessage']);
 
- Route::any('/ollama/{path?}', OllamaProxyController::class)
+Route::any('/ollama/{path?}', OllamaProxyController::class)
     ->where('path', '.*');
 
 Route::middleware('auth:sanctum')->group(function (): void {
@@ -53,6 +54,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/projects', [ProjectController::class, 'store']);
     Route::put('/projects/{project}', [ProjectController::class, 'update']);
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
+    Route::get('/projects/{project}/widget-settings', [ProjectController::class, 'widgetSettings']);
+    Route::put('/projects/{project}/widget-settings', [ProjectController::class, 'updateWidgetSettings']);
 
     Route::get('/projects/{project}/documents', [ProjectDocumentController::class, 'index']);
     Route::get('/projects/{project}/documents/{document}/content', [ProjectDocumentController::class, 'content']);

@@ -11,7 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ChatMessage, WidgetApiService } from '../services/widget-api.service';
+import { ChatMessage, WidgetApiService, WidgetSettings } from '../services/widget-api.service';
 
 type WidgetTheme = 'auto' | 'dark' | 'light';
 
@@ -23,6 +23,7 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
   providers: [WidgetApiService],
   host: {
     '[attr.data-theme]': 'activeTheme',
+    '[class.position-left]': 'settings().position === "bottom-left"',
   },
   template: `
     <!-- Floating trigger button -->
@@ -41,7 +42,7 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
         <div class="panel-header">
           <div class="header-brand">
             <div class="brand-icon">Z</div>
-            <span class="header-title">Chat with us</span>
+            <span class="header-title">{{ settings().title }}</span>
           </div>
           <button (click)="closePanel()" class="close-btn" aria-label="Close chat">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -64,7 +65,14 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
             </div>
           } @else if (messages().length === 0) {
             <div class="status-message">
-              <span>Ask a question about our documentation.</span>
+              <span>{{ settings().welcome_message }}</span>
+              @if (settings().suggested_questions.length > 0) {
+                <div class="suggested-questions">
+                  @for (question of settings().suggested_questions; track question) {
+                    <button type="button" class="suggested-question" (click)="useSuggestedQuestion(question)">{{ question }}</button>
+                  }
+                </div>
+              }
             </div>
           }
 
@@ -72,6 +80,22 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
             <div [class]="msg.role === 'assistant' ? 'msg msg-assistant' : 'msg msg-user'">
               <div class="msg-role">{{ msg.role === 'assistant' ? 'Assistant' : 'You' }}</div>
               <div class="msg-content">{{ msg.content }}</div>
+              @if (settings().show_citations && msg.role === 'assistant' && msg.citations?.length) {
+                <div class="citations">
+                  <div class="citations-label">Sources</div>
+                  @for (citation of msg.citations; track citation.chunk_id ?? citation.document_name) {
+                    <div class="citation">
+                      <div class="citation-doc">{{ citation.document_name ?? 'Document' }}</div>
+                      @if (citation.page_from || citation.page_to) {
+                        <div class="citation-pages">Pages {{ citation.page_from ?? '-' }}-{{ citation.page_to ?? citation.page_from ?? '-' }}</div>
+                      }
+                      @if (citation.excerpt) {
+                        <div class="citation-excerpt">{{ citation.excerpt }}</div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
             </div>
           }
 
@@ -94,7 +118,7 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
             <textarea
               class="msg-input"
               rows="2"
-              placeholder="Type your question..."
+              [placeholder]="settings().input_placeholder"
               [disabled]="!api.hasSession || isSending()"
               [(ngModel)]="draft"
               (keydown.enter)="onEnterKey($event)"
@@ -137,6 +161,11 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
       font-size: 14px;
       line-height: 1.5;
       color: var(--zc-text);
+    }
+
+    :host(.position-left) {
+      right: auto;
+      left: 20px;
     }
 
     :host([data-theme='light']) {
@@ -223,6 +252,23 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
       padding: 24px 8px; font-size: 13px;
     }
     .error-text { color: var(--zc-error); }
+
+    .suggested-questions {
+      display: flex; flex-direction: column; gap: 8px;
+      width: 100%; margin-top: 8px;
+    }
+    .suggested-question {
+      width: 100%; border-radius: 8px;
+      border: 1px solid var(--zc-border);
+      background: var(--zc-surface);
+      color: var(--zc-text);
+      padding: 8px 10px;
+      font: inherit; font-size: 12px;
+      text-align: left; cursor: pointer;
+    }
+    .suggested-question:hover {
+      border-color: var(--zc-primary);
+    }
 
     .retry-btn {
       padding: 6px 16px; border-radius: 8px;
@@ -350,6 +396,7 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
   protected readonly messages = signal<ChatMessage[]>([]);
   protected readonly isSending = signal(false);
   protected readonly chatError = signal('');
+  protected readonly settings = signal<WidgetSettings>(this.defaultSettings());
   protected draft = '';
   protected activeTheme: Exclude<WidgetTheme, 'auto'> = 'dark';
 
@@ -362,12 +409,14 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnInit(): void {
     this.syncApiConfig();
+    this.loadSettings();
     this.resolveTheme();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['apiBaseUrl'] || changes['widgetKey'] || changes['widgetSecret'] || changes['userToken'] || changes['userEmail']) {
       this.syncApiConfig();
+      this.loadSettings();
     }
 
     if (changes['widgetTheme']) {
@@ -401,6 +450,11 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
       keyboardEvent.preventDefault();
       this.send();
     }
+  }
+
+  protected useSuggestedQuestion(question: string): void {
+    this.draft = question;
+    this.send();
   }
 
    protected send(): void {
@@ -464,6 +518,28 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
+  private loadSettings(): void {
+    if (!this.apiBaseUrl || !this.widgetKey) {
+      return;
+    }
+
+    this.api.getSettings().subscribe({
+      next: (settings) => {
+        this.settings.set({ ...this.defaultSettings(), ...settings });
+        this.applyPrimaryColor();
+        this.resolveTheme();
+      },
+      error: () => {
+        this.applyPrimaryColor();
+      },
+    });
+  }
+
+  private applyPrimaryColor(): void {
+    this.elRef.nativeElement.style.setProperty('--zc-primary', this.settings().primary_color);
+    this.elRef.nativeElement.style.setProperty('--zc-primary-hover', this.settings().primary_color);
+  }
+
   private resolveTheme(): void {
     const requestedTheme = this.normalizeWidgetTheme();
 
@@ -483,6 +559,7 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private readWidgetThemeValue(): string {
+    const settingsTheme = String(this.settings().theme ?? '').trim().toLowerCase();
     const inputValue = String(this.widgetTheme ?? '').trim().toLowerCase();
     const hostAttrValue = String(this.elRef.nativeElement.getAttribute('widget-theme') ?? '').trim().toLowerCase();
 
@@ -491,7 +568,7 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
       return inputValue;
     }
 
-    return hostAttrValue || inputValue || 'auto';
+    return hostAttrValue || settingsTheme || inputValue || 'auto';
   }
 
   private getSystemTheme(): 'dark' | 'light' {
@@ -532,6 +609,21 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
         }
       }
     }, 50);
+  }
+
+  private defaultSettings(): WidgetSettings {
+    return {
+      title: 'Chat with us',
+      welcome_message: 'Ask a question about our documentation.',
+      input_placeholder: 'Type your question...',
+      primary_color: '#0891b2',
+      position: 'bottom-right',
+      theme: 'auto',
+      language: 'en',
+      show_citations: false,
+      allowed_domains: [],
+      suggested_questions: [],
+    };
   }
 }
 

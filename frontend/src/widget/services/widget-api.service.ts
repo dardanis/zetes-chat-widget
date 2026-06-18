@@ -19,6 +19,19 @@ export interface ChatMessage {
   created_at?: string;
 }
 
+export interface WidgetSettings {
+  title: string;
+  welcome_message: string;
+  input_placeholder: string;
+  primary_color: string;
+  position: 'bottom-right' | 'bottom-left' | string;
+  theme: 'auto' | 'light' | 'dark' | string;
+  language: string;
+  show_citations: boolean;
+  allowed_domains: string[];
+  suggested_questions: string[];
+}
+
 interface CreateSessionResponse {
   data: { id: number; title?: string };
   session_token: string;
@@ -31,6 +44,10 @@ interface SendMessageResponse {
     assistant_message: ChatMessage;
     citations: Citation[];
   };
+}
+
+interface WidgetSettingsResponse {
+  data: WidgetSettings;
 }
 
 @Injectable()
@@ -55,6 +72,12 @@ export class WidgetApiService {
 
   get hasSession(): boolean {
     return this.chatSessionId !== null && this.sessionToken !== '';
+  }
+
+  getSettings(): Observable<WidgetSettings> {
+    return this.http
+      .get<WidgetSettingsResponse>(`${this.apiBaseUrl}/api/widget/${this.widgetKey}/settings`)
+      .pipe(map((res) => res.data));
   }
 
   createSession(title?: string): Observable<number> {

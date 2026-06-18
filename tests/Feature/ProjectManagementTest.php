@@ -197,6 +197,40 @@ class ProjectManagementTest extends TestCase
         $this->assertDatabaseMissing('projects', ['id' => $project->id]);
     }
 
+    public function test_user_can_update_project_widget_settings(): void
+    {
+        [$user, $tenant] = $this->createUserWithTenant();
+
+        $project = Project::query()->create([
+            'tenant_id' => $tenant->id,
+            'country_code' => 'DE',
+            'owner_id' => $user->id,
+            'name' => 'Widget Config',
+            'slug' => 'widget-config',
+            'widget_key' => 'wk-'.str_repeat('w', 30),
+        ]);
+
+        $this->actingAs($user)
+            ->putJson("/api/projects/{$project->id}/widget-settings", [
+                'title' => 'Support Chat',
+                'welcome_message' => 'How can we help?',
+                'input_placeholder' => 'Ask support...',
+                'primary_color' => '#123abc',
+                'position' => 'bottom-left',
+                'theme' => 'light',
+                'language' => 'en',
+                'show_citations' => false,
+                'allowed_domains' => ['example.com', 'help.example.com'],
+                'suggested_questions' => ['How do I start?'],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.title', 'Support Chat')
+            ->assertJsonPath('data.position', 'bottom-left')
+            ->assertJsonPath('data.allowed_domains.0', 'example.com');
+
+        $this->assertSame('Support Chat', $project->fresh()->widget_settings['title']);
+    }
+
     public function test_user_cannot_delete_foreign_project(): void
     {
         $user = User::factory()->create(['role' => 'manager']);

@@ -21,6 +21,7 @@ import { Project, RagApiService } from '../core/rag-api.service';
           <a [routerLink]="['overview']" routerLinkActive="bg-[var(--app-surface)] text-[var(--app-accent)]" class="rounded-lg px-4 py-2 text-sm font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]">Overview</a>
           <a [routerLink]="['documents']" routerLinkActive="bg-[var(--app-surface)] text-[var(--app-accent)]" class="rounded-lg px-4 py-2 text-sm font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]">Documents</a>
           <a [routerLink]="['chat']" routerLinkActive="bg-[var(--app-surface)] text-[var(--app-accent)]" class="rounded-lg px-4 py-2 text-sm font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]">Chat</a>
+          <a [routerLink]="['widget']" routerLinkActive="bg-[var(--app-surface)] text-[var(--app-accent)]" class="rounded-lg px-4 py-2 text-sm font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]">Widget</a>
         </nav>
       </div>
 

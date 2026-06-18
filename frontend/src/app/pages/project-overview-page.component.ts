@@ -128,11 +128,35 @@ export class ProjectOverviewPageComponent implements OnInit {
   }
 
   protected copyEmbedCode(): void {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(this.embedSnippet()).then(() => {
-        this.copySuccess.set(true);
-        setTimeout(() => this.copySuccess.set(false), 2000);
-      });
+    this.copyText(this.embedSnippet()).then(() => {
+      this.copySuccess.set(true);
+      setTimeout(() => this.copySuccess.set(false), 2000);
+    });
+  }
+
+  private async copyText(value: string): Promise<void> {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(value);
+        return;
+      } catch {
+        // Fall back for non-secure contexts or denied clipboard permission.
+      }
     }
+
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.top = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
   }
 }

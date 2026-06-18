@@ -9,9 +9,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Project extends Model
 {
-    protected $fillable = ['tenant_id', 'country_code', 'owner_id', 'name', 'slug', 'widget_key', 'widget_secret', 'widget_secret_hash', 'status'];
+    protected $fillable = ['tenant_id', 'country_code', 'owner_id', 'name', 'slug', 'widget_key', 'widget_secret', 'widget_secret_hash', 'widget_settings', 'status'];
 
     protected $hidden = ['widget_secret_hash'];
+
+    protected function casts(): array
+    {
+        return [
+            'widget_settings' => 'array',
+        ];
+    }
 
     public function tenant(): BelongsTo
     {

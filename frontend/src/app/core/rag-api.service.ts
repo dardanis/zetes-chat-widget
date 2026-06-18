@@ -26,6 +26,20 @@ export interface Project {
   updated_at?: string;
   tenant?: Tenant;
   country?: Country;
+  widget_settings?: WidgetSettings;
+}
+
+export interface WidgetSettings {
+  title: string;
+  welcome_message: string;
+  input_placeholder: string;
+  primary_color: string;
+  position: 'bottom-right' | 'bottom-left' | string;
+  theme: 'auto' | 'light' | 'dark' | string;
+  language: string;
+  show_citations: boolean;
+  allowed_domains: string[];
+  suggested_questions: string[];
 }
 
 export interface Country {
@@ -278,6 +292,16 @@ export class RagApiService {
   updateProject(id: number, payload: { name: string; country_code: string; status?: string }): Observable<ApiItemResponse<Project>> {
     return this.auth.refreshCsrf().pipe(
       switchMap(() => this.http.put<ApiItemResponse<Project>>(`/api/projects/${id}`, payload))
+    );
+  }
+
+  getWidgetSettings(projectId: number): Observable<ApiItemResponse<WidgetSettings>> {
+    return this.http.get<ApiItemResponse<WidgetSettings>>(`/api/projects/${projectId}/widget-settings`);
+  }
+
+  updateWidgetSettings(projectId: number, payload: WidgetSettings): Observable<ApiItemResponse<WidgetSettings>> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.put<ApiItemResponse<WidgetSettings>>(`/api/projects/${projectId}/widget-settings`, payload))
     );
   }
 

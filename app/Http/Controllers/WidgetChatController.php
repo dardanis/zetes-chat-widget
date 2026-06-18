@@ -6,9 +6,9 @@ use App\Models\ChatSession;
 use App\Models\Project;
 use App\Services\Rag\ChatAnswerService;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -16,10 +16,20 @@ class WidgetChatController extends Controller
 {
     public function __construct(private readonly ChatAnswerService $chatAnswerService) {}
 
+    public function settings(string $widgetKey): JsonResponse
+    {
+        $project = Project::query()->where('widget_key', $widgetKey)->firstOrFail();
+
+        return response()->json([
+            'data' => ProjectController::serializeWidgetSettings($project),
+        ]);
+    }
+
     public function createSession(Request $request, string $widgetKey): JsonResponse
     {
         $project = Project::query()->where('widget_key', $widgetKey)->firstOrFail();
         $this->assertWidgetSecretIsValid($request, $project);
+        $this->assertWidgetOriginIsAllowed($request, $project);
 
         $payload = $request->validate([
             'title' => ['nullable', 'string', 'max:255'],
@@ -52,6 +62,7 @@ class WidgetChatController extends Controller
     {
         $project = Project::query()->where('widget_key', $widgetKey)->firstOrFail();
         $this->assertWidgetSecretIsValid($request, $project);
+        $this->assertWidgetOriginIsAllowed($request, $project);
 
         $payload = $request->validate([
             'chat_session_id' => ['required', 'integer', 'exists:chat_sessions,id'],
@@ -94,13 +105,15 @@ class WidgetChatController extends Controller
         ]);
 
         $result = $this->chatAnswerService->answer($project, $session, $payload['message']);
+        $settings = ProjectController::serializeWidgetSettings($project);
+        $citations = ($settings['show_citations'] ?? false) ? $result['citations'] : [];
 
         return response()->json([
             'data' => [
                 'chat_session_id' => $session->id,
                 'user_message' => $userMessage,
                 'assistant_message' => $result['message'],
-                'citations' => $result['citations'],
+                'citations' => $citations,
             ],
         ]);
     }
@@ -110,6 +123,49 @@ class WidgetChatController extends Controller
         $secret = (string) $request->header('X-Widget-Secret', '');
 
         abort_unless($project->widget_secret_hash && $secret !== '' && Hash::check($secret, $project->widget_secret_hash), 403, 'Invalid widget secret.');
+    }
+
+    private function assertWidgetOriginIsAllowed(Request $request, Project $project): void
+    {
+        $allowedDomains = collect(ProjectController::serializeWidgetSettings($project)['allowed_domains'] ?? [])
+            ->filter(fn (mixed $domain): bool => is_string($domain) && trim($domain) !== '')
+            ->values();
+
+        if ($allowedDomains->isEmpty()) {
+            return;
+        }
+
+        $originHost = $this->hostFromUrl((string) $request->headers->get('origin', ''));
+        $refererHost = $this->hostFromUrl((string) $request->headers->get('referer', ''));
+
+        $isAllowed = $allowedDomains->contains(function (string $allowedDomain) use ($originHost, $refererHost): bool {
+            $allowedHost = $this->normalizeHost($allowedDomain);
+
+            return $allowedHost !== ''
+                && ($this->hostMatches($originHost, $allowedHost) || $this->hostMatches($refererHost, $allowedHost));
+        });
+
+        abort_unless($isAllowed, 403, 'Origin is not allowed for this widget.');
+    }
+
+    private function hostFromUrl(string $url): string
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+
+        return is_string($host) ? $this->normalizeHost($host) : '';
+    }
+
+    private function normalizeHost(string $host): string
+    {
+        $host = preg_replace('/^https?:\/\//', '', strtolower(trim($host))) ?? '';
+        $host = explode('/', $host)[0] ?? '';
+
+        return preg_replace('/:\d+$/', '', $host) ?? '';
+    }
+
+    private function hostMatches(string $host, string $allowedHost): bool
+    {
+        return $host === $allowedHost || str_ends_with($host, '.'.$allowedHost);
     }
 
     /**
@@ -252,6 +308,3 @@ class WidgetChatController extends Controller
         return $metadata;
     }
 }
-
-
-

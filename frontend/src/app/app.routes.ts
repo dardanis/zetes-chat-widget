@@ -7,6 +7,7 @@ import { LoginPageComponent } from './pages/login-page.component';
 import { ProjectChatPageComponent } from './pages/project-chat-page.component';
 import { ProjectDocumentsPageComponent } from './pages/project-documents-page.component';
 import { ProjectOverviewPageComponent } from './pages/project-overview-page.component';
+import { ProjectWidgetPageComponent } from './pages/project-widget-page.component';
 import { ProjectsPageComponent } from './pages/projects-page.component';
 // COMMENTED: registration disabled
 // import { RegisterPageComponent } from './pages/register-page.component';
@@ -38,6 +39,7 @@ export const routes: Routes = [
           { path: 'overview', component: ProjectOverviewPageComponent },
           { path: 'documents', component: ProjectDocumentsPageComponent },
           { path: 'chat', component: ProjectChatPageComponent },
+          { path: 'widget', component: ProjectWidgetPageComponent },
         ],
       },
       { path: 'settings', component: SettingsPageComponent },

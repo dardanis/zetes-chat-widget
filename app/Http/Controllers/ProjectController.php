@@ -112,10 +112,88 @@ class ProjectController extends Controller
         return response()->json(status: 204);
     }
 
+    public function widgetSettings(Request $request, Project $project): JsonResponse
+    {
+        abort_unless($this->access->canAccessProject($request->user(), $project, 'projects.view'), 403);
+
+        return response()->json(['data' => $this->serializeWidgetSettings($project)]);
+    }
+
+    public function updateWidgetSettings(Request $request, Project $project): JsonResponse
+    {
+        abort_unless($this->access->canAccessProject($request->user(), $project, 'projects.update'), 403);
+
+        $payload = $request->validate([
+            'title' => ['required', 'string', 'max:80'],
+            'welcome_message' => ['required', 'string', 'max:500'],
+            'input_placeholder' => ['required', 'string', 'max:120'],
+            'primary_color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'position' => ['required', Rule::in(['bottom-right', 'bottom-left'])],
+            'theme' => ['required', Rule::in(['auto', 'light', 'dark'])],
+            'language' => ['required', 'string', 'size:2'],
+            'show_citations' => ['required', 'boolean'],
+            'allowed_domains' => ['array', 'max:20'],
+            'allowed_domains.*' => ['string', 'max:255'],
+            'suggested_questions' => ['array', 'max:6'],
+            'suggested_questions.*' => ['string', 'max:120'],
+        ]);
+
+        $payload['language'] = strtolower($payload['language']);
+        $payload['allowed_domains'] = $this->normalizeList($payload['allowed_domains'] ?? []);
+        $payload['suggested_questions'] = $this->normalizeList($payload['suggested_questions'] ?? []);
+
+        $project->update([
+            'widget_settings' => array_merge($this->defaultWidgetSettings(), $payload),
+        ]);
+
+        return response()->json(['data' => $this->serializeWidgetSettings($project->fresh())]);
+    }
+
     private function normalizeCountryCode(Request $request): void
     {
         if ($request->filled('country_code')) {
             $request->merge(['country_code' => strtoupper($request->input('country_code'))]);
         }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function defaultWidgetSettings(): array
+    {
+        return [
+            'title' => 'Chat with us',
+            'welcome_message' => 'Ask a question about our documentation.',
+            'input_placeholder' => 'Type your question...',
+            'primary_color' => '#0891b2',
+            'position' => 'bottom-right',
+            'theme' => 'auto',
+            'language' => 'en',
+            'show_citations' => false,
+            'allowed_domains' => [],
+            'suggested_questions' => [],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function serializeWidgetSettings(Project $project): array
+    {
+        return array_merge(self::defaultWidgetSettings(), $project->widget_settings ?? []);
+    }
+
+    /**
+     * @param  array<int, string>  $items
+     * @return list<string>
+     */
+    private function normalizeList(array $items): array
+    {
+        return collect($items)
+            ->map(fn (string $item): string => trim($item))
+            ->filter(fn (string $item): bool => $item !== '')
+            ->unique()
+            ->values()
+            ->all();
     }
 }
