@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\DocumentChunk;
 use App\Models\Project;
@@ -185,6 +186,41 @@ class WidgetPublicEndpointSecurityTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('data.citations', []);
+    }
+
+    public function test_widget_user_can_submit_feedback_for_assistant_message(): void
+    {
+        $project = $this->createProjectWithSecret('feedback-secret');
+
+        $create = $this->withHeaders($this->widgetHeaders('feedback-secret'))
+            ->postJson('/api/widget/'.$project->widget_key.'/chats', [
+                'title' => 'Session',
+            ])->assertCreated();
+
+        $session = ChatSession::query()->findOrFail($create->json('data.id'));
+        $message = ChatMessage::query()->create([
+            'tenant_id' => $project->tenant_id,
+            'project_id' => $project->id,
+            'chat_session_id' => $session->id,
+            'role' => 'assistant',
+            'content' => 'Widget answer',
+        ]);
+
+        $this->withHeaders($this->widgetHeaders('feedback-secret'))
+            ->postJson('/api/widget/'.$project->widget_key.'/feedback', [
+                'chat_session_id' => $session->id,
+                'chat_message_id' => $message->id,
+                'session_token' => $create->json('session_token'),
+                'rating' => 'unhelpful',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.rating', 'unhelpful');
+
+        $this->assertDatabaseHas('chat_message_feedback', [
+            'chat_message_id' => $message->id,
+            'rating' => 'unhelpful',
+            'channel' => 'widget',
+        ]);
     }
 
     private function createProjectWithSecret(string $plainSecret = 'secret-123'): Project

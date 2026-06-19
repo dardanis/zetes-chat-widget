@@ -196,6 +196,20 @@ export interface ChatMessage {
   created_at?: string;
 }
 
+export interface ProjectAnalytics {
+  total_chats: number;
+  most_asked_questions: { question: string; count: number }[];
+  failed_no_answer_questions: { question: string; answer: string; created_at?: string }[];
+  average_response_time_seconds: number | null;
+  top_referenced_documents: { document_name: string; count: number }[];
+  feedback_score: {
+    helpful: number;
+    unhelpful: number;
+    total: number;
+    positive_rate: number | null;
+  };
+}
+
 interface ApiListResponse<T> {
   data: T[];
 }
@@ -434,6 +448,16 @@ export class RagApiService {
 
   getChatHistory(projectId: number, chatId: number): Observable<ApiListResponse<ChatMessage>> {
     return this.http.get<ApiListResponse<ChatMessage>>(`/api/projects/${projectId}/chats/${chatId}/history`);
+  }
+
+  submitDashboardFeedback(projectId: number, messageId: number, rating: 'helpful' | 'unhelpful'): Observable<ApiItemResponse<unknown>> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.post<ApiItemResponse<unknown>>(`/api/projects/${projectId}/messages/${messageId}/feedback`, { rating }))
+    );
+  }
+
+  getProjectAnalytics(projectId: number): Observable<ApiItemResponse<ProjectAnalytics>> {
+    return this.http.get<ApiItemResponse<ProjectAnalytics>>(`/api/projects/${projectId}/analytics`);
   }
 
   sendMessage(projectId: number, chatSessionId: number, message: string): Observable<{ data: { chat_session_id: number; user_message: ChatMessage; assistant_message: ChatMessage; citations: Citation[] } }> {

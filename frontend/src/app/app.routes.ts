@@ -5,6 +5,7 @@ import { ProjectLayoutComponent } from './layouts/project-layout.component';
 import { DashboardPageComponent } from './pages/dashboard-page.component';
 import { LoginPageComponent } from './pages/login-page.component';
 import { ProjectChatPageComponent } from './pages/project-chat-page.component';
+import { ProjectAnalyticsPageComponent } from './pages/project-analytics-page.component';
 import { ProjectDocumentsPageComponent } from './pages/project-documents-page.component';
 import { ProjectOverviewPageComponent } from './pages/project-overview-page.component';
 import { ProjectWidgetPageComponent } from './pages/project-widget-page.component';
@@ -39,6 +40,7 @@ export const routes: Routes = [
           { path: 'overview', component: ProjectOverviewPageComponent },
           { path: 'documents', component: ProjectDocumentsPageComponent },
           { path: 'chat', component: ProjectChatPageComponent },
+          { path: 'analytics', component: ProjectAnalyticsPageComponent },
           { path: 'widget', component: ProjectWidgetPageComponent },
         ],
       },

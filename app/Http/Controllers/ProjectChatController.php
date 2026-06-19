@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChatMessage;
+use App\Models\ChatMessageFeedback;
 use App\Models\ChatSession;
 use App\Services\Rag\ChatAnswerService;
 use App\Services\Rag\ProjectAccessService;
@@ -97,6 +99,38 @@ class ProjectChatController extends Controller
 
         return response()->json(['data' => $messages]);
     }
+
+    public function feedback(Request $request, int $project, int $message): JsonResponse
+    {
+        $resolvedProject = $this->accessService->resolveProjectForUser($request->user(), $project);
+
+        $payload = $request->validate([
+            'rating' => ['required', 'in:helpful,unhelpful'],
+            'comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $chatMessage = ChatMessage::query()
+            ->where('tenant_id', $resolvedProject->tenant_id)
+            ->where('project_id', $resolvedProject->id)
+            ->where('id', $message)
+            ->where('role', 'assistant')
+            ->firstOrFail();
+
+        $feedback = ChatMessageFeedback::query()->updateOrCreate(
+            [
+                'chat_message_id' => $chatMessage->id,
+                'user_id' => $request->user()->id,
+                'channel' => 'dashboard',
+            ],
+            [
+                'tenant_id' => $chatMessage->tenant_id,
+                'project_id' => $chatMessage->project_id,
+                'chat_session_id' => $chatMessage->chat_session_id,
+                'rating' => $payload['rating'],
+                'metadata' => array_filter(['comment' => $payload['comment'] ?? null]),
+            ]
+        );
+
+        return response()->json(['data' => $feedback]);
+    }
 }
-
-

@@ -88,6 +88,14 @@ import { ChatMessage, ChatSession, RagApiService } from '../core/rag-api.service
                   </div>
                 </div>
               }
+
+              @if (message.role === 'assistant') {
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--app-text-muted)]">
+                  <span>Was this helpful?</span>
+                  <button type="button" (click)="submitFeedback(message, 'helpful')" [class]="feedbackFor(message.id) === 'helpful' ? 'rounded-full border border-[var(--app-accent)] bg-[var(--app-accent-soft)] px-2 py-1 text-[var(--app-accent)]' : 'rounded-full border border-[var(--app-border)] px-2 py-1 hover:bg-[var(--app-surface)]'">Yes</button>
+                  <button type="button" (click)="submitFeedback(message, 'unhelpful')" [class]="feedbackFor(message.id) === 'unhelpful' ? 'rounded-full border border-[var(--app-danger)]/60 bg-[var(--app-danger)]/10 px-2 py-1 text-[var(--app-danger)]' : 'rounded-full border border-[var(--app-border)] px-2 py-1 hover:bg-[var(--app-surface)]'">No</button>
+                </div>
+              }
             </article>
           } @empty {
             <p class="text-sm text-[var(--app-text-muted)]">Create or select a chat session to start asking questions.</p>
@@ -118,6 +126,7 @@ export class ProjectChatPageComponent implements OnInit, OnDestroy {
   protected readonly isSending = signal(false);
   protected readonly isRealtimeConnected = signal(false);
   protected readonly chatError = signal('');
+  protected readonly feedback = signal<Record<number, 'helpful' | 'unhelpful'>>({});
   protected chatTitle = '';
   protected messageDraft = '';
 
@@ -202,6 +211,24 @@ export class ProjectChatPageComponent implements OnInit, OnDestroy {
         this.isSending.set(false);
       },
       complete: () => this.isSending.set(false),
+    });
+  }
+
+  protected feedbackFor(messageId: number): 'helpful' | 'unhelpful' | null {
+    return this.feedback()[messageId] ?? null;
+  }
+
+  protected submitFeedback(message: ChatMessage, rating: 'helpful' | 'unhelpful'): void {
+    this.feedback.update((items) => ({ ...items, [message.id]: rating }));
+
+    this.api.submitDashboardFeedback(this.requireProjectId(), message.id, rating).subscribe({
+      error: () => {
+        this.feedback.update((items) => {
+          const next = { ...items };
+          delete next[message.id];
+          return next;
+        });
+      },
     });
   }
 

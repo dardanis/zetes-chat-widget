@@ -96,6 +96,13 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
                   }
                 </div>
               }
+              @if (msg.role === 'assistant' && msg.id > 0) {
+                <div class="feedback-row">
+                  <span>Was this helpful?</span>
+                  <button type="button" [class.active]="feedbackFor(msg.id) === 'helpful'" (click)="submitFeedback(msg.id, 'helpful')">Yes</button>
+                  <button type="button" [class.active]="feedbackFor(msg.id) === 'unhelpful'" (click)="submitFeedback(msg.id, 'unhelpful')">No</button>
+                </div>
+              }
             </div>
           }
 
@@ -329,6 +336,26 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
     .citation-pages { font-size: 11px; color: var(--zc-text-muted); }
     .citation-excerpt { font-size: 11px; color: var(--zc-text-dim); margin-top: 2px; }
 
+    .feedback-row {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 8px; font-size: 11px; color: var(--zc-text-muted);
+    }
+    .feedback-row button {
+      border: 1px solid var(--zc-border);
+      background: transparent;
+      color: var(--zc-text-muted);
+      border-radius: 999px;
+      padding: 3px 8px;
+      font: inherit;
+      cursor: pointer;
+    }
+    .feedback-row button:hover,
+    .feedback-row button.active {
+      border-color: var(--zc-primary);
+      color: var(--zc-primary);
+      background: color-mix(in srgb, var(--zc-primary) 12%, transparent);
+    }
+
     /* Input */
     .input-area {
       padding: 12px 16px 10px;
@@ -397,6 +424,7 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
   protected readonly isSending = signal(false);
   protected readonly chatError = signal('');
   protected readonly settings = signal<WidgetSettings>(this.defaultSettings());
+  protected readonly feedback = signal<Record<number, 'helpful' | 'unhelpful'>>({});
   protected draft = '';
   protected activeTheme: Exclude<WidgetTheme, 'auto'> = 'dark';
 
@@ -455,6 +483,23 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
   protected useSuggestedQuestion(question: string): void {
     this.draft = question;
     this.send();
+  }
+
+  protected feedbackFor(messageId: number): 'helpful' | 'unhelpful' | null {
+    return this.feedback()[messageId] ?? null;
+  }
+
+  protected submitFeedback(messageId: number, rating: 'helpful' | 'unhelpful'): void {
+    this.feedback.update((items) => ({ ...items, [messageId]: rating }));
+    this.api.submitFeedback(messageId, rating).subscribe({
+      error: () => {
+        this.feedback.update((items) => {
+          const next = { ...items };
+          delete next[messageId];
+          return next;
+        });
+      },
+    });
   }
 
    protected send(): void {

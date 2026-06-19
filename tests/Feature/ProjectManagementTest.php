@@ -2,7 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\ChatMessage;
+use App\Models\ChatMessageFeedback;
+use App\Models\ChatSession;
+use App\Models\DocumentChunk;
+use App\Models\MessageCitation;
 use App\Models\Project;
+use App\Models\ProjectDocument;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -231,6 +237,95 @@ class ProjectManagementTest extends TestCase
         $this->assertSame('Support Chat', $project->fresh()->widget_settings['title']);
     }
 
+    public function test_user_can_submit_feedback_for_project_assistant_message(): void
+    {
+        [$user, $tenant] = $this->createUserWithTenant();
+        $project = $this->createProject($tenant, $user);
+        $session = ChatSession::query()->create([
+            'tenant_id' => $tenant->id,
+            'project_id' => $project->id,
+            'user_id' => $user->id,
+            'channel' => 'dashboard',
+        ]);
+        $message = ChatMessage::query()->create([
+            'tenant_id' => $tenant->id,
+            'project_id' => $project->id,
+            'chat_session_id' => $session->id,
+            'role' => 'assistant',
+            'content' => 'Answer',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson("/api/projects/{$project->id}/messages/{$message->id}/feedback", [
+                'rating' => 'helpful',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.rating', 'helpful');
+
+        $this->assertDatabaseHas('chat_message_feedback', [
+            'chat_message_id' => $message->id,
+            'rating' => 'helpful',
+            'channel' => 'dashboard',
+        ]);
+    }
+
+    public function test_user_can_view_project_analytics(): void
+    {
+        [$user, $tenant] = $this->createUserWithTenant();
+        $project = $this->createProject($tenant, $user);
+        $session = ChatSession::query()->create([
+            'tenant_id' => $tenant->id,
+            'project_id' => $project->id,
+            'user_id' => $user->id,
+            'channel' => 'dashboard',
+        ]);
+        $question = ChatMessage::query()->forceCreate([
+            'tenant_id' => $tenant->id,
+            'project_id' => $project->id,
+            'chat_session_id' => $session->id,
+            'user_id' => $user->id,
+            'role' => 'user',
+            'content' => 'What is the return policy?',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $answer = ChatMessage::query()->forceCreate([
+            'tenant_id' => $tenant->id,
+            'project_id' => $project->id,
+            'chat_session_id' => $session->id,
+            'role' => 'assistant',
+            'content' => 'Context is insufficient to answer.',
+            'created_at' => $question->created_at->copy()->addSeconds(3),
+            'updated_at' => $question->created_at->copy()->addSeconds(3),
+        ]);
+        $chunk = $this->createDocumentChunk($tenant, $project, $user);
+        MessageCitation::query()->create([
+            'chat_message_id' => $answer->id,
+            'document_chunk_id' => $chunk->id,
+            'score' => 0.8,
+            'metadata' => ['document_name' => 'returns.pdf'],
+        ]);
+        ChatMessageFeedback::query()->create([
+            'tenant_id' => $tenant->id,
+            'project_id' => $project->id,
+            'chat_session_id' => $session->id,
+            'chat_message_id' => $answer->id,
+            'user_id' => $user->id,
+            'rating' => 'helpful',
+            'channel' => 'dashboard',
+        ]);
+
+        $this->actingAs($user)
+            ->getJson("/api/projects/{$project->id}/analytics")
+            ->assertOk()
+            ->assertJsonPath('data.total_chats', 1)
+            ->assertJsonPath('data.most_asked_questions.0.question', 'What is the return policy?')
+            ->assertJsonPath('data.failed_no_answer_questions.0.question', 'What is the return policy?')
+            ->assertJsonPath('data.average_response_time_seconds', 3)
+            ->assertJsonPath('data.top_referenced_documents.0.document_name', 'returns.pdf')
+            ->assertJsonPath('data.feedback_score.positive_rate', 100);
+    }
+
     public function test_user_cannot_delete_foreign_project(): void
     {
         $user = User::factory()->create(['role' => 'manager']);
@@ -263,5 +358,39 @@ class ProjectManagementTest extends TestCase
         $tenant->users()->attach($user->id, ['role' => 'owner']);
 
         return [$user, $tenant];
+    }
+
+    private function createProject(Tenant $tenant, User $user): Project
+    {
+        return Project::query()->create([
+            'tenant_id' => $tenant->id,
+            'country_code' => 'DE',
+            'owner_id' => $user->id,
+            'name' => 'Analytics Project',
+            'slug' => 'analytics-project',
+            'widget_key' => 'wk-'.strtolower(str()->random(30)),
+        ]);
+    }
+
+    private function createDocumentChunk(Tenant $tenant, Project $project, User $user): DocumentChunk
+    {
+        $document = ProjectDocument::query()->create([
+            'tenant_id' => $tenant->id,
+            'project_id' => $project->id,
+            'uploaded_by' => $user->id,
+            'original_name' => 'returns.pdf',
+            'storage_path' => 'documents/returns.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 100,
+            'status' => 'processed',
+        ]);
+
+        return DocumentChunk::query()->create([
+            'tenant_id' => $tenant->id,
+            'project_id' => $project->id,
+            'project_document_id' => $document->id,
+            'chunk_index' => 0,
+            'content' => 'Return policy source text.',
+        ]);
     }
 }

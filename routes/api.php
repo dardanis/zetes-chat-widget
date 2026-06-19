@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ConfluenceIntegrationController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\OllamaProxyController;
+use App\Http\Controllers\ProjectAnalyticsController;
 use App\Http\Controllers\ProjectChatController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectDocumentController;
@@ -25,6 +26,8 @@ Route::middleware('throttle:widget-chat-create')
     ->post('/widget/{widgetKey}/chats', [WidgetChatController::class, 'createSession']);
 Route::middleware('throttle:widget-chat-message')
     ->post('/widget/{widgetKey}/chats/message', [WidgetChatController::class, 'sendMessage']);
+Route::middleware('throttle:widget-chat-message')
+    ->post('/widget/{widgetKey}/feedback', [WidgetChatController::class, 'feedback']);
 
 Route::any('/ollama/{path?}', OllamaProxyController::class)
     ->where('path', '.*');
@@ -69,6 +72,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/projects/{project}/chats', [ProjectChatController::class, 'createSession']);
     Route::post('/projects/{project}/chats/message', [ProjectChatController::class, 'sendMessage']);
     Route::get('/projects/{project}/chats/{chat}/history', [ProjectChatController::class, 'history']);
+    Route::post('/projects/{project}/messages/{message}/feedback', [ProjectChatController::class, 'feedback']);
+    Route::get('/projects/{project}/analytics', ProjectAnalyticsController::class);
 
     Route::get('/tenants/{tenant}/confluence/connections', [ConfluenceIntegrationController::class, 'indexConnections']);
     Route::post('/tenants/{tenant}/confluence/connections', [ConfluenceIntegrationController::class, 'storeConnection']);

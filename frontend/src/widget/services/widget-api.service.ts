@@ -116,6 +116,19 @@ export class WidgetApiService {
       .pipe(map((res) => res.data));
   }
 
+  submitFeedback(messageId: number, rating: 'helpful' | 'unhelpful'): Observable<unknown> {
+    return this.http.post(
+      `${this.apiBaseUrl}/api/widget/${this.widgetKey}/feedback`,
+      {
+        chat_session_id: this.chatSessionId,
+        chat_message_id: messageId,
+        session_token: this.sessionToken,
+        rating,
+      },
+      { headers: this.buildHeaders() }
+    );
+  }
+
   private buildHeaders(): HttpHeaders {
     return new HttpHeaders({
       'Content-Type': 'application/json',
