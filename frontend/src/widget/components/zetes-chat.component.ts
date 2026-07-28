@@ -50,6 +50,17 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
             </svg>
           </button>
         </div>
+        @if (settings().show_project_selector) {
+          <div class="project-selector-bar">
+            <label class="project-label" for="project-doc-select">{{ settings().project_name || 'Project documents' }}</label>
+            <select id="project-doc-select" class="project-select" [ngModel]="selectedDocumentId()" (ngModelChange)="onDocumentChange($event)">
+              <option [ngValue]="null">All project documents</option>
+              @for (document of settings().project_documents; track document.id) {
+                <option [ngValue]="document.id">{{ document.name }}</option>
+              }
+            </select>
+          </div>
+        }
 
         <!-- Messages area -->
         <div class="messages-area" #messagesArea>
@@ -245,6 +256,34 @@ type WidgetTheme = 'auto' | 'dark' | 'light';
     }
     .close-btn:hover { color: var(--zc-text); background: var(--zc-surface-alt); }
 
+    .project-selector-bar {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--zc-border);
+      background: var(--zc-surface);
+    }
+    .project-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--zc-text-muted);
+      font-weight: 600;
+    }
+    .project-select {
+      width: 100%;
+      border: 1px solid var(--zc-border);
+      border-radius: 8px;
+      background: var(--zc-bg);
+      color: var(--zc-text);
+      padding: 8px 10px;
+      font-size: 12px;
+      outline: none;
+    }
+    .project-select:focus {
+      border-color: var(--zc-primary);
+    }
+
     /* Messages */
     .messages-area {
       flex: 1; overflow-y: auto; padding: 16px;
@@ -424,6 +463,7 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
   protected readonly isSending = signal(false);
   protected readonly chatError = signal('');
   protected readonly settings = signal<WidgetSettings>(this.defaultSettings());
+  protected readonly selectedDocumentId = signal<number | null>(null);
   protected readonly feedback = signal<Record<number, 'helpful' | 'unhelpful'>>({});
   protected draft = '';
   protected activeTheme: Exclude<WidgetTheme, 'auto'> = 'dark';
@@ -485,6 +525,16 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
     this.send();
   }
 
+  protected onDocumentChange(value: number | string | null): void {
+    if (value === null || value === '') {
+      this.selectedDocumentId.set(null);
+      return;
+    }
+
+    const parsed = Number(value);
+    this.selectedDocumentId.set(Number.isFinite(parsed) && parsed > 0 ? parsed : null);
+  }
+
   protected feedbackFor(messageId: number): 'helpful' | 'unhelpful' | null {
     return this.feedback()[messageId] ?? null;
   }
@@ -521,7 +571,7 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
      this.draft = '';
      this.scrollToBottom();
 
-     this.api.sendMessage(text).subscribe({
+    this.api.sendMessage(text, this.selectedDocumentId()).subscribe({
        next: (data) => {
          // Replace optimistic message with real API responses
          this.messages.update((msgs) =>
@@ -571,6 +621,7 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
     this.api.getSettings().subscribe({
       next: (settings) => {
         this.settings.set({ ...this.defaultSettings(), ...settings });
+        this.selectedDocumentId.set(null);
         this.applyPrimaryColor();
         this.resolveTheme();
       },
@@ -666,8 +717,11 @@ export class ZetesChatComponent implements OnInit, OnChanges, OnDestroy {
       theme: 'auto',
       language: 'en',
       show_citations: false,
+      show_project_selector: false,
       allowed_domains: [],
       suggested_questions: [],
+      project_name: '',
+      project_documents: [],
     };
   }
 }

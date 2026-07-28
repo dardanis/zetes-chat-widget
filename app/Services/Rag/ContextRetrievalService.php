@@ -12,7 +12,7 @@ class ContextRetrievalService
      * @param  array<int, float>  $queryEmbedding
      * @return array<int, array<string, mixed>>
      */
-    public function retrieve(Project $project, string $question, array $queryEmbedding): array
+    public function retrieve(Project $project, string $question, array $queryEmbedding, ?int $selectedDocumentId = null): array
     {
         $topK = max((int) config('rag.retrieval.top_k'), 1);
         $needle = $this->buildNeedle($question);
@@ -23,6 +23,10 @@ class ContextRetrievalService
             ->with('projectDocument:id,original_name,ingestion_type')
             ->where('tenant_id', $project->tenant_id)
             ->where('project_id', $project->id);
+
+        if ($selectedDocumentId !== null) {
+            $query->where('project_document_id', $selectedDocumentId);
+        }
 
         if (DB::getDriverName() === 'pgsql' && $queryEmbedding !== []) {
             $vector = '['.implode(',', array_map(static fn (float $value): string => (string) $value, $queryEmbedding)).']';

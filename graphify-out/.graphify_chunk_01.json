@@ -1,0 +1,454 @@
+{
+  "nodes": [
+    {
+      "id": "_github_workflows_ci_self_hosted_self_hosted_deploy_job",
+      "label": "Self Hosted Deploy Job",
+      "file_type": "code",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\.github\\workflows\\ci-self-hosted.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_project_conventions_guide",
+      "label": "Project Conventions Guide",
+      "file_type": "document",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\AGENTS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_graphify_query_first_rule",
+      "label": "Graphify Query-First Rule",
+      "file_type": "rationale",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\CLAUDE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Prefer graphify query/path/explain before raw source browsing to reduce context size and improve relevance."
+    },
+    {
+      "id": "readme_rag_mvp_rag_mvp_architecture",
+      "label": "RAG MVP Architecture",
+      "file_type": "concept",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\README-RAG-MVP.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_rag_mvp_chunking_strategy_sliding_window",
+      "label": "Sentence-Aware Sliding Window Chunking",
+      "file_type": "rationale",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\README-RAG-MVP.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Chunking uses overlap and minimum size to preserve context continuity while reducing semantic drift at chunk boundaries."
+    },
+    {
+      "id": "readme_rag_mvp_widget_security_controls",
+      "label": "Widget Security Controls",
+      "file_type": "rationale",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\README-RAG-MVP.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Public widget chat is constrained by origin allowlist, project secret, session token, TTL, and rate limits to harden unauthenticated endpoints."
+    },
+    {
+      "id": "readme_laravel_framework_baseline",
+      "label": "Laravel Framework Baseline",
+      "file_type": "document",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_confluence_ingestion_confluence_ingestion_flow",
+      "label": "Confluence Ingestion Flow",
+      "file_type": "concept",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\docs\\confluence-ingestion.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_confluence_ingestion_rag_queue_sync_mechanism",
+      "label": "RAG Queue Sync Mechanism",
+      "file_type": "rationale",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\docs\\confluence-ingestion.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Confluence synchronization is queued on the rag queue and scoped by tenant and project to preserve isolation."
+    },
+    {
+      "id": "frontend_readme_angular_cli_workflow",
+      "label": "Angular CLI Workflow",
+      "file_type": "document",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\frontend\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "frontend_src_app_app_bootstrap_loading_gate",
+      "label": "Bootstrap Loading Gate",
+      "file_type": "code",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\frontend\\src\\app\\app.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "frontend_src_index_angular_app_root_shell",
+      "label": "Angular App Root Shell",
+      "file_type": "code",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\frontend\\src\\index.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_chat_zetes_chat_embed_configuration",
+      "label": "Zetes Chat Embed Configuration",
+      "file_type": "code",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\chat.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_ng_3rdpartylicenses_third_party_licenses_manifest",
+      "label": "Third-Party Licenses Manifest (NG)",
+      "file_type": "document",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\ng\\3rdpartylicenses.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_ng_index_angular_ng_deployment_shell",
+      "label": "Angular NG Deployment Shell",
+      "file_type": "code",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\ng\\index.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_robots_allow_all_crawler_policy",
+      "label": "Allow-All Crawler Policy",
+      "file_type": "concept",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\robots.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_widget_3rdpartylicenses_third_party_licenses_manifest",
+      "label": "Third-Party Licenses Manifest (Widget)",
+      "file_type": "document",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\widget\\3rdpartylicenses.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "public_widget_index_angular_widget_deployment_shell",
+      "label": "Angular Widget Deployment Shell",
+      "file_type": "code",
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\widget\\index.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "readme_rag_mvp_chunking_strategy_sliding_window",
+      "target": "readme_rag_mvp_rag_mvp_architecture",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\README-RAG-MVP.md",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "readme_rag_mvp_widget_security_controls",
+      "target": "readme_rag_mvp_rag_mvp_architecture",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\README-RAG-MVP.md",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "docs_confluence_ingestion_confluence_ingestion_flow",
+      "target": "readme_rag_mvp_rag_mvp_architecture",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\docs\\confluence-ingestion.md",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "docs_confluence_ingestion_rag_queue_sync_mechanism",
+      "target": "docs_confluence_ingestion_confluence_ingestion_flow",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\docs\\confluence-ingestion.md",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "agents_project_conventions_guide",
+      "target": "readme_laravel_framework_baseline",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\AGENTS.md",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "agents_project_conventions_guide",
+      "target": "readme_rag_mvp_rag_mvp_architecture",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\AGENTS.md",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "claude_graphify_query_first_rule",
+      "target": "agents_project_conventions_guide",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\CLAUDE.md",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "_github_workflows_ci_self_hosted_self_hosted_deploy_job",
+      "target": "public_ng_index_angular_ng_deployment_shell",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\.github\\workflows\\ci-self-hosted.yml",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "_github_workflows_ci_self_hosted_self_hosted_deploy_job",
+      "target": "public_widget_index_angular_widget_deployment_shell",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\.github\\workflows\\ci-self-hosted.yml",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "_github_workflows_ci_self_hosted_self_hosted_deploy_job",
+      "target": "readme_rag_mvp_rag_mvp_architecture",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\.github\\workflows\\ci-self-hosted.yml",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "frontend_readme_angular_cli_workflow",
+      "target": "frontend_src_index_angular_app_root_shell",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\frontend\\README.md",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "frontend_src_index_angular_app_root_shell",
+      "target": "public_ng_index_angular_ng_deployment_shell",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\ng\\index.html",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "frontend_src_index_angular_app_root_shell",
+      "target": "public_widget_index_angular_widget_deployment_shell",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\widget\\index.html",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "public_chat_zetes_chat_embed_configuration",
+      "target": "readme_rag_mvp_widget_security_controls",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\chat.html",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "public_chat_zetes_chat_embed_configuration",
+      "target": "public_widget_index_angular_widget_deployment_shell",
+      "relation": "references",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.25,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\chat.html",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "public_ng_3rdpartylicenses_third_party_licenses_manifest",
+      "target": "public_widget_3rdpartylicenses_third_party_licenses_manifest",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\ng\\3rdpartylicenses.txt",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "public_ng_index_angular_ng_deployment_shell",
+      "target": "public_ng_3rdpartylicenses_third_party_licenses_manifest",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\ng\\index.html",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "public_widget_index_angular_widget_deployment_shell",
+      "target": "public_widget_3rdpartylicenses_third_party_licenses_manifest",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\widget\\index.html",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "readme_laravel_framework_baseline",
+      "target": "readme_rag_mvp_rag_mvp_architecture",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\README.md",
+      "source_location": null,
+      "weight": 1
+    },
+    {
+      "source": "public_robots_allow_all_crawler_policy",
+      "target": "public_chat_zetes_chat_embed_configuration",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\public\\robots.txt",
+      "source_location": null,
+      "weight": 1
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "widget_runtime_delivery_flow",
+      "label": "Widget Runtime Delivery Flow",
+      "nodes": [
+        "readme_rag_mvp_widget_security_controls",
+        "public_chat_zetes_chat_embed_configuration",
+        "public_widget_index_angular_widget_deployment_shell"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\README-RAG-MVP.md"
+    },
+    {
+      "id": "angular_multi_target_build_outputs",
+      "label": "Angular Multi-Target Build Outputs",
+      "nodes": [
+        "frontend_readme_angular_cli_workflow",
+        "public_ng_index_angular_ng_deployment_shell",
+        "public_widget_index_angular_widget_deployment_shell",
+        "public_ng_3rdpartylicenses_third_party_licenses_manifest",
+        "public_widget_3rdpartylicenses_third_party_licenses_manifest"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\frontend\\README.md"
+    },
+    {
+      "id": "rag_ingestion_and_sync_boundary",
+      "label": "RAG Ingestion and Sync Boundary",
+      "nodes": [
+        "readme_rag_mvp_rag_mvp_architecture",
+        "readme_rag_mvp_chunking_strategy_sliding_window",
+        "docs_confluence_ingestion_confluence_ingestion_flow",
+        "docs_confluence_ingestion_rag_queue_sync_mechanism"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\laragon\\www\\zetes-chat-widget\\docs\\confluence-ingestion.md"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

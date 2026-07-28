@@ -19,10 +19,10 @@ class ChatAnswerService
     /**
      * @return array{message:ChatMessage,citations:array<int,array<string,mixed>>}
      */
-    public function answer(Project $project, ChatSession $chatSession, string $question): array
+    public function answer(Project $project, ChatSession $chatSession, string $question, ?int $selectedDocumentId = null): array
     {
         $embedding = $this->embeddingService->embed($question);
-        $contexts = $this->retrievalService->retrieve($project, $question, $embedding);
+        $contexts = $this->retrievalService->retrieve($project, $question, $embedding, $selectedDocumentId);
 
         $history = $chatSession->messages()
             ->latest('id')

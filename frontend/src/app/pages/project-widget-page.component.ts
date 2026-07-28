@@ -71,6 +71,11 @@ import { Project, RagApiService, WidgetSettings } from '../core/rag-api.service'
                 <input name="showCitations" type="checkbox" [(ngModel)]="form.show_citations" class="h-4 w-4 rounded border-[var(--app-border)]" />
                 <span class="text-sm text-[var(--app-text)]">Show citations in widget answers</span>
               </label>
+              <label class="flex items-center gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2">
+                <input name="showProjectSelector" type="checkbox" [(ngModel)]="form.show_project_selector" class="h-4 w-4 rounded border-[var(--app-border)]" />
+                <span class="text-sm text-[var(--app-text)]">Show project documents dropdown</span>
+              </label>
+              <p class="text-xs text-[var(--app-text-muted)] md:col-span-2">When enabled, the widget shows a dropdown with indexed project documents so users know what content is available for search.</p>
               <p class="text-xs text-[var(--app-text-muted)] md:col-span-2">Citations appear only when the answer has document sources. When disabled, the widget API returns answers without source blocks.</p>
             </div>
           </div>
@@ -115,6 +120,20 @@ import { Project, RagApiService, WidgetSettings } from '../core/rag-api.service'
                   <span class="text-lg leading-none">&times;</span>
                 </div>
                 <div class="space-y-3 bg-[var(--app-surface)] p-4">
+                  @if (form.show_project_selector) {
+                    <div class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3">
+                      <label class="text-[10px] font-semibold uppercase tracking-wide text-[var(--app-text-muted)]">{{ form.project_name || 'Project documents' }}</label>
+                      <select class="mt-2 w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-xs text-[var(--app-text)]">
+                        @if ((form.project_documents ?? []).length === 0) {
+                          <option selected>No indexed documents</option>
+                        } @else {
+                          @for (document of form.project_documents ?? []; track document.id) {
+                            <option [value]="document.id">{{ document.name }}</option>
+                          }
+                        }
+                      </select>
+                    </div>
+                  }
                   <div class="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3 text-sm text-[var(--app-text-muted)]">{{ form.welcome_message }}</div>
                   @for (question of suggestedQuestions(); track question) {
                     <button type="button" class="block w-full rounded-lg border border-[var(--app-border)] px-3 py-2 text-left text-xs text-[var(--app-text)]">{{ question }}</button>
@@ -208,6 +227,7 @@ export class ProjectWidgetPageComponent implements OnInit {
     const payload: WidgetSettings = {
       ...this.form,
       language: this.form.language.trim().toLowerCase(),
+      show_project_selector: this.form.show_project_selector,
       allowed_domains: this.lines(this.allowedDomainsText).slice(0, 20),
       suggested_questions: this.lines(this.suggestedQuestionsText).slice(0, 6),
     };
@@ -277,8 +297,11 @@ export class ProjectWidgetPageComponent implements OnInit {
       theme: 'auto',
       language: 'en',
       show_citations: false,
+      show_project_selector: false,
       allowed_domains: [],
       suggested_questions: [],
+      project_name: '',
+      project_documents: [],
     };
   }
 }

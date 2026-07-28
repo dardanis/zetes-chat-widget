@@ -38,8 +38,14 @@ export interface WidgetSettings {
   theme: 'auto' | 'light' | 'dark' | string;
   language: string;
   show_citations: boolean;
+  show_project_selector: boolean;
   allowed_domains: string[];
   suggested_questions: string[];
+  project_name?: string;
+  project_documents?: Array<{
+    id: number;
+    name: string;
+  }>;
 }
 
 export interface Country {

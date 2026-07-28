@@ -132,6 +132,7 @@ class ProjectController extends Controller
             'theme' => ['required', Rule::in(['auto', 'light', 'dark'])],
             'language' => ['required', 'string', 'size:2'],
             'show_citations' => ['required', 'boolean'],
+            'show_project_selector' => ['required', 'boolean'],
             'allowed_domains' => ['array', 'max:20'],
             'allowed_domains.*' => ['string', 'max:255'],
             'suggested_questions' => ['array', 'max:6'],
@@ -170,6 +171,7 @@ class ProjectController extends Controller
             'theme' => 'auto',
             'language' => 'en',
             'show_citations' => false,
+            'show_project_selector' => false,
             'allowed_domains' => [],
             'suggested_questions' => [],
         ];
@@ -180,7 +182,21 @@ class ProjectController extends Controller
      */
     public static function serializeWidgetSettings(Project $project): array
     {
-        return array_merge(self::defaultWidgetSettings(), $project->widget_settings ?? []);
+        $projectDocuments = $project->documents()
+            ->where('status', 'indexed')
+            ->orderBy('original_name')
+            ->get(['id', 'original_name'])
+            ->map(fn ($document): array => [
+                'id' => (int) $document->id,
+                'name' => (string) $document->original_name,
+            ])
+            ->values()
+            ->all();
+
+        return array_merge(self::defaultWidgetSettings(), $project->widget_settings ?? [], [
+            'project_name' => $project->name,
+            'project_documents' => $projectDocuments,
+        ]);
     }
 
     /**

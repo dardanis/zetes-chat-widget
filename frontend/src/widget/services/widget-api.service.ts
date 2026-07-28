@@ -28,8 +28,14 @@ export interface WidgetSettings {
   theme: 'auto' | 'light' | 'dark' | string;
   language: string;
   show_citations: boolean;
+  show_project_selector: boolean;
   allowed_domains: string[];
   suggested_questions: string[];
+  project_name?: string;
+  project_documents: Array<{
+    id: number;
+    name: string;
+  }>;
 }
 
 interface CreateSessionResponse {
@@ -100,7 +106,7 @@ export class WidgetApiService {
       );
   }
 
-  sendMessage(message: string): Observable<SendMessageResponse['data']> {
+  sendMessage(message: string, selectedDocumentId?: number | null): Observable<SendMessageResponse['data']> {
     return this.http
       .post<SendMessageResponse>(
         `${this.apiBaseUrl}/api/widget/${this.widgetKey}/chats/message`,
@@ -108,6 +114,7 @@ export class WidgetApiService {
           chat_session_id: this.chatSessionId,
           message,
           session_token: this.sessionToken,
+          ...(selectedDocumentId ? { selected_document_id: selectedDocumentId } : {}),
           ...(this.userToken ? { user_token: this.userToken } : {}),
           ...(this.userEmail ? { user_email: this.userEmail } : {}),
         },

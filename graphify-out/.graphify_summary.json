@@ -1,0 +1,13 @@
+{
+  "total_files": 201,
+  "total_words": 75607,
+  "counts": {
+    "code": 186,
+    "document": 15,
+    "paper": 0,
+    "image": 0,
+    "video": 0
+  },
+  "skipped_sensitive": 3,
+  "scan_root": "D:\\laragon\\www\\zetes-chat-widget"
+}

@@ -70,9 +70,20 @@ class WidgetChatController extends Controller
             'chat_session_id' => ['required', 'integer', 'exists:chat_sessions,id'],
             'message' => ['required', 'string', 'max:5000'],
             'session_token' => ['required', 'string', 'min:32'],
+            'selected_document_id' => ['sometimes', 'nullable', 'integer'],
             'user_token' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'user_email' => ['sometimes', 'nullable', 'email', 'max:255'],
         ]);
+
+        $selectedDocumentId = isset($payload['selected_document_id']) ? (int) $payload['selected_document_id'] : null;
+
+        if ($selectedDocumentId !== null) {
+            abort_unless(
+                $project->documents()->whereKey($selectedDocumentId)->where('status', 'indexed')->exists(),
+                422,
+                'Selected document is invalid for this project.'
+            );
+        }
 
         $session = ChatSession::query()
             ->where('tenant_id', $project->tenant_id)
@@ -102,7 +113,7 @@ class WidgetChatController extends Controller
             ], static fn (mixed $value): bool => $value !== null && $value !== ''),
         ]);
 
-        $result = $this->chatAnswerService->answer($project, $session, $payload['message']);
+        $result = $this->chatAnswerService->answer($project, $session, $payload['message'], $selectedDocumentId);
         $settings = ProjectController::serializeWidgetSettings($project);
         $citations = ($settings['show_citations'] ?? false) ? $result['citations'] : [];
 

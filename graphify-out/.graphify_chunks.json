@@ -1,0 +1,23 @@
+[
+  {
+    "chunk": 1,
+    "files": [
+      "D:\\laragon\\www\\zetes-chat-widget\\.github\\workflows\\ci-self-hosted.yml",
+      "D:\\laragon\\www\\zetes-chat-widget\\AGENTS.md",
+      "D:\\laragon\\www\\zetes-chat-widget\\CLAUDE.md",
+      "D:\\laragon\\www\\zetes-chat-widget\\README-RAG-MVP.md",
+      "D:\\laragon\\www\\zetes-chat-widget\\README.md",
+      "D:\\laragon\\www\\zetes-chat-widget\\docs\\confluence-ingestion.md",
+      "D:\\laragon\\www\\zetes-chat-widget\\frontend\\README.md",
+      "D:\\laragon\\www\\zetes-chat-widget\\frontend\\src\\app\\app.html",
+      "D:\\laragon\\www\\zetes-chat-widget\\frontend\\src\\index.html",
+      "D:\\laragon\\www\\zetes-chat-widget\\public\\chat.html",
+      "D:\\laragon\\www\\zetes-chat-widget\\public\\ng\\3rdpartylicenses.txt",
+      "D:\\laragon\\www\\zetes-chat-widget\\public\\ng\\index.html",
+      "D:\\laragon\\www\\zetes-chat-widget\\public\\robots.txt",
+      "D:\\laragon\\www\\zetes-chat-widget\\public\\widget\\3rdpartylicenses.txt",
+      "D:\\laragon\\www\\zetes-chat-widget\\public\\widget\\index.html"
+    ],
+    "chunk_path": "D:\\laragon\\www\\zetes-chat-widget\\graphify-out\\.graphify_chunk_01.json"
+  }
+]
