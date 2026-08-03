@@ -12,9 +12,14 @@ class ContextRetrievalService
      * @param  array<int, float>  $queryEmbedding
      * @return array<int, array<string, mixed>>
      */
-    public function retrieve(Project $project, string $question, array $queryEmbedding, ?int $selectedDocumentId = null): array
-    {
-        $topK = max((int) config('rag.retrieval.top_k'), 1);
+    public function retrieve(
+        Project $project,
+        string $question,
+        array $queryEmbedding,
+        ?int $selectedDocumentId = null,
+        ?int $topKOverride = null,
+    ): array {
+        $topK = max($topKOverride ?? (int) config('rag.retrieval.top_k'), 1);
         $needle = $this->buildNeedle($question);
         $terms = $this->extractTerms($question);
         $preferConfluence = $this->shouldPreferConfluence($question);

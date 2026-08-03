@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Project extends Model
 {
-    protected $fillable = ['tenant_id', 'country_code', 'owner_id', 'name', 'slug', 'widget_key', 'widget_secret', 'widget_secret_hash', 'widget_settings', 'status'];
+    protected $fillable = ['tenant_id', 'country_code', 'owner_id', 'name', 'slug', 'widget_key', 'widget_secret', 'widget_secret_hash', 'widget_settings', 'phone_number', 'twilio_phone_sid', 'voice_settings', 'status'];
 
     protected $hidden = ['widget_secret_hash'];
 
@@ -17,6 +17,7 @@ class Project extends Model
     {
         return [
             'widget_settings' => 'array',
+            'voice_settings' => 'array',
         ];
     }
 
@@ -48,6 +49,11 @@ class Project extends Model
     public function confluenceSpaces(): HasMany
     {
         return $this->hasMany(ProjectConfluenceSpace::class);
+    }
+
+    public function phoneCalls(): HasMany
+    {
+        return $this->hasMany(PhoneCall::class);
     }
 
     public function users(): BelongsToMany

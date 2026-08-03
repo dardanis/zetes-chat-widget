@@ -13,7 +13,9 @@ use App\Http\Controllers\ProjectChatController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectDocumentController;
 use App\Http\Controllers\StatsController;
+use App\Http\Controllers\ProjectVoiceController;
 use App\Http\Controllers\TenantController;
+use App\Http\Controllers\TwilioVoiceController;
 use App\Http\Controllers\WidgetChatController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +33,16 @@ Route::middleware('throttle:widget-chat-message')
 
 Route::any('/ollama/{path?}', OllamaProxyController::class)
     ->where('path', '.*');
+
+// Public Twilio voice webhooks: authenticated by request signature, not by user session.
+Route::middleware(['twilio.webhook', 'throttle:twilio-voice'])->prefix('twilio/voice')->group(function (): void {
+    Route::post('/incoming', [TwilioVoiceController::class, 'incoming']);
+    Route::post('/turn', [TwilioVoiceController::class, 'turn']);
+    Route::post('/turn/wait', [TwilioVoiceController::class, 'wait']);
+    Route::post('/status', [TwilioVoiceController::class, 'status']);
+    Route::post('/recording', [TwilioVoiceController::class, 'recording']);
+    Route::post('/fallback', [TwilioVoiceController::class, 'fallback']);
+});
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/user', fn (Request $request) => $request->user());
@@ -59,6 +71,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
     Route::get('/projects/{project}/widget-settings', [ProjectController::class, 'widgetSettings']);
     Route::put('/projects/{project}/widget-settings', [ProjectController::class, 'updateWidgetSettings']);
+
+    Route::get('/projects/{project}/voice-settings', [ProjectVoiceController::class, 'show']);
+    Route::put('/projects/{project}/voice-settings', [ProjectVoiceController::class, 'update']);
+    Route::post('/projects/{project}/phone-number', [ProjectVoiceController::class, 'assignNumber']);
+    Route::delete('/projects/{project}/phone-number', [ProjectVoiceController::class, 'releaseNumber']);
+    Route::get('/projects/{project}/calls', [ProjectVoiceController::class, 'calls']);
+    Route::get('/projects/{project}/callers', [ProjectVoiceController::class, 'callers']);
 
     Route::get('/projects/{project}/documents', [ProjectDocumentController::class, 'index']);
     Route::get('/projects/{project}/documents/{document}/content', [ProjectDocumentController::class, 'content']);

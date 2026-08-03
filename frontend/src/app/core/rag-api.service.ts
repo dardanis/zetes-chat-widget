@@ -48,6 +48,56 @@ export interface WidgetSettings {
   }>;
 }
 
+export interface VoiceSettings {
+  enabled: boolean;
+  greeting: string;
+  tts_voice: string;
+  language: string;
+  speech_timeout: string;
+  max_turns: number;
+  thinking_message: string;
+  no_input_prompt: string;
+  fallback_message: string;
+  goodbye_message: string;
+  unavailable_message: string;
+  record_calls: boolean;
+  transfer_number: string | null;
+  phone_number?: string | null;
+  twilio_phone_sid?: string | null;
+  project_name?: string;
+  twilio_configured?: boolean;
+  webhook_url?: string;
+}
+
+export interface PhoneCall {
+  id: number;
+  tenant_id: number;
+  project_id: number;
+  chat_session_id: number | null;
+  call_sid: string;
+  from_number: string;
+  to_number: string;
+  from_country?: string | null;
+  from_city?: string | null;
+  status: string;
+  direction: string;
+  turn_count: number;
+  duration_seconds?: number | null;
+  recording_url?: string | null;
+  started_at?: string | null;
+  ended_at?: string | null;
+  created_at?: string;
+}
+
+export interface PhoneCaller {
+  from_number: string;
+  from_country?: string | null;
+  call_count: number;
+  total_seconds: number;
+  first_call_at?: string | null;
+  last_call_at?: string | null;
+}
+
 export interface Country {
   code: string;
   name: string;
@@ -173,6 +223,12 @@ export interface ChatSession {
       name?: string | null;
       subject?: string | null;
     } | null;
+    caller?: {
+      number?: string | null;
+      country?: string | null;
+      city?: string | null;
+    } | null;
+    call_sid?: string | null;
   } | null;
   created_at?: string;
   updated_at?: string;
@@ -213,6 +269,18 @@ export interface ProjectAnalytics {
     unhelpful: number;
     total: number;
     positive_rate: number | null;
+  };
+  chats_by_channel: Record<string, number>;
+  voice: {
+    total_calls: number;
+    completed_calls: number;
+    completion_rate: number | null;
+    average_call_duration_seconds: number | null;
+    average_turns_per_call: number | null;
+    total_minutes: number;
+    unique_callers: number;
+    top_calling_numbers: { from_number: string; count: number }[];
+    calls_by_day: { date: string; count: number }[];
   };
 }
 
@@ -323,6 +391,43 @@ export class RagApiService {
     return this.auth.refreshCsrf().pipe(
       switchMap(() => this.http.put<ApiItemResponse<WidgetSettings>>(`/api/projects/${projectId}/widget-settings`, payload))
     );
+  }
+
+  getVoiceSettings(projectId: number): Observable<ApiItemResponse<VoiceSettings>> {
+    return this.http.get<ApiItemResponse<VoiceSettings>>(`/api/projects/${projectId}/voice-settings`);
+  }
+
+  updateVoiceSettings(projectId: number, payload: Partial<VoiceSettings>): Observable<ApiItemResponse<VoiceSettings>> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.put<ApiItemResponse<VoiceSettings>>(`/api/projects/${projectId}/voice-settings`, payload))
+    );
+  }
+
+  assignPhoneNumber(projectId: number, phoneNumber: string): Observable<ApiItemResponse<VoiceSettings>> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.post<ApiItemResponse<VoiceSettings>>(`/api/projects/${projectId}/phone-number`, { phone_number: phoneNumber }))
+    );
+  }
+
+  releasePhoneNumber(projectId: number): Observable<ApiItemResponse<VoiceSettings>> {
+    return this.auth.refreshCsrf().pipe(
+      switchMap(() => this.http.delete<ApiItemResponse<VoiceSettings>>(`/api/projects/${projectId}/phone-number`))
+    );
+  }
+
+  listCalls(projectId: number, options?: { page?: number; per_page?: number; status?: string; from_number?: string }): Observable<ApiPaginatedResponse<PhoneCall>> {
+    return this.http.get<ApiPaginatedResponse<PhoneCall>>(`/api/projects/${projectId}/calls`, {
+      params: this.compactParams({
+        page: options?.page ?? 1,
+        per_page: options?.per_page ?? 15,
+        status: options?.status,
+        from_number: options?.from_number,
+      }),
+    });
+  }
+
+  listCallers(projectId: number): Observable<ApiListResponse<PhoneCaller>> {
+    return this.http.get<ApiListResponse<PhoneCaller>>(`/api/projects/${projectId}/callers`);
   }
 
   deleteProject(id: number): Observable<void> {

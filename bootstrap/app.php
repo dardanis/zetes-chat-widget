@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\ValidateTwilioRequest;
 use App\Http\Middleware\ValidateWidgetRequest;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -16,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->alias([
             'widget.request' => ValidateWidgetRequest::class,
+            'twilio.webhook' => ValidateTwilioRequest::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

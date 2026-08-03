@@ -8,6 +8,7 @@ import { ProjectChatPageComponent } from './pages/project-chat-page.component';
 import { ProjectAnalyticsPageComponent } from './pages/project-analytics-page.component';
 import { ProjectDocumentsPageComponent } from './pages/project-documents-page.component';
 import { ProjectOverviewPageComponent } from './pages/project-overview-page.component';
+import { ProjectPhonePageComponent } from './pages/project-phone-page.component';
 import { ProjectWidgetPageComponent } from './pages/project-widget-page.component';
 import { ProjectsPageComponent } from './pages/projects-page.component';
 // COMMENTED: registration disabled
@@ -42,6 +43,7 @@ export const routes: Routes = [
           { path: 'chat', component: ProjectChatPageComponent },
           { path: 'analytics', component: ProjectAnalyticsPageComponent },
           { path: 'widget', component: ProjectWidgetPageComponent },
+          { path: 'phone', component: ProjectPhonePageComponent },
         ],
       },
       { path: 'settings', component: SettingsPageComponent },

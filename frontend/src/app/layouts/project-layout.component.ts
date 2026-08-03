@@ -23,6 +23,7 @@ import { Project, RagApiService } from '../core/rag-api.service';
           <a [routerLink]="['chat']" routerLinkActive="bg-[var(--app-surface)] text-[var(--app-accent)]" class="rounded-lg px-4 py-2 text-sm font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]">Chat</a>
           <a [routerLink]="['analytics']" routerLinkActive="bg-[var(--app-surface)] text-[var(--app-accent)]" class="rounded-lg px-4 py-2 text-sm font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]">Analytics</a>
           <a [routerLink]="['widget']" routerLinkActive="bg-[var(--app-surface)] text-[var(--app-accent)]" class="rounded-lg px-4 py-2 text-sm font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]">Widget</a>
+          <a [routerLink]="['phone']" routerLinkActive="bg-[var(--app-surface)] text-[var(--app-accent)]" class="rounded-lg px-4 py-2 text-sm font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]">Phone</a>
         </nav>
       </div>
 

@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    'twilio' => [
+        'account_sid' => env('TWILIO_ACCOUNT_SID'),
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+
+        /*
+         * The exact public origin Twilio calls (for example the ngrok host during local
+         * development). Signature validation hashes the full request URL, so this must match
+         * what Twilio dialled rather than whatever host Laravel sees behind a tunnel or proxy.
+         */
+        'webhook_base_url' => env('TWILIO_WEBHOOK_BASE_URL', env('APP_URL')),
+        'validate_signature' => (bool) env('TWILIO_VALIDATE_SIGNATURE', true),
+    ],
+
 ];

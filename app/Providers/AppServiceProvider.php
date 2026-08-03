@@ -40,5 +40,14 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(90)->by($key);
         });
+
+        // Keyed on the caller, not the IP: every request arrives from Twilio's egress ranges, so an
+        // IP key would let one abusive caller throttle everyone else's calls. The limit has to
+        // accommodate the hold loop, which redirects once every couple of seconds per turn.
+        RateLimiter::for('twilio-voice', function (Request $request): Limit {
+            $caller = (string) ($request->input('From') ?? $request->input('CallSid') ?? $request->ip());
+
+            return Limit::perMinute(120)->by('twilio-voice|'.$caller);
+        });
     }
 }

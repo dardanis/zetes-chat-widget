@@ -26,7 +26,10 @@ import { ChatMessage, ChatSession, RagApiService } from '../core/rag-api.service
         <div class="mt-4 space-y-2">
           @for (chat of chats(); track chat.id) {
             <button type="button" (click)="selectChat(chat)" [class]="selectedChatId() === chat.id ? 'w-full rounded-md border border-[var(--app-accent)]/50 bg-[var(--app-accent-soft)] px-3 py-2 text-left text-sm text-[var(--app-accent)]' : 'w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-left text-sm text-[var(--app-text-muted)] hover:opacity-90'">
-              <p class="truncate font-medium">{{ chatDisplayTitle(chat) }}</p>
+              <div class="flex items-center gap-2">
+                <p class="min-w-0 flex-1 truncate font-medium">{{ chatDisplayTitle(chat) }}</p>
+                <span [class]="chat.channel === 'voice' ? 'shrink-0 rounded-full border border-[var(--app-accent)]/40 bg-[var(--app-accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--app-accent)]' : 'shrink-0 rounded-full border border-[var(--app-border)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide opacity-70'">{{ chatChannelLabel(chat) }}</span>
+              </div>
 
               @if (chatDisplaySubtitle(chat)) {
                 <p class="mt-1 truncate text-xs opacity-80">{{ chatDisplaySubtitle(chat) }}</p>
@@ -147,7 +150,17 @@ export class ProjectChatPageComponent implements OnInit, OnDestroy {
     this.api.listChats(this.requireProjectId()).subscribe(({ data }) => {
       this.chats.set(data);
 
-      if (!this.selectedChatId() && data.length > 0) {
+      if (this.selectedChatId()) {
+        return;
+      }
+
+      // Deep link from the Phone tab's call list: ?session=<chat_session_id>.
+      const requested = Number(this.route.snapshot.queryParamMap.get('session'));
+      const target = requested ? data.find((chat) => chat.id === requested) : undefined;
+
+      if (target) {
+        this.selectChat(target);
+      } else if (data.length > 0) {
         this.selectChat(data[0]);
       }
     });
@@ -239,7 +252,26 @@ export class ProjectChatPageComponent implements OnInit, OnDestroy {
       return widgetEmail;
     }
 
+    const callerNumber = chat.metadata?.caller?.number?.trim();
+
+    if (chat.channel === 'voice' && callerNumber) {
+      return callerNumber;
+    }
+
     return chat.title?.trim() || `Chat #${chat.id}`;
+  }
+
+  protected chatChannelLabel(chat: ChatSession): string {
+    switch (chat.channel) {
+      case 'voice':
+        return 'Phone';
+      case 'widget':
+        return 'Widget';
+      case 'dashboard':
+        return 'Dashboard';
+      default:
+        return chat.channel || 'Chat';
+    }
   }
 
   protected chatDisplaySubtitle(chat: ChatSession): string {
@@ -253,6 +285,17 @@ export class ProjectChatPageComponent implements OnInit, OnDestroy {
         details.push(widgetUser.email ? 'token matched to email' : 'token detected');
       } else if (widgetUser?.email) {
         details.push('email provided');
+      }
+    } else if (chat.channel === 'voice') {
+      details.push('Inbound call');
+
+      const country = chat.metadata?.caller?.country?.trim();
+      const city = chat.metadata?.caller?.city?.trim();
+
+      if (city && country) {
+        details.push(`${city}, ${country}`);
+      } else if (country) {
+        details.push(country);
       }
     } else if (chat.channel) {
       details.push(chat.channel);
