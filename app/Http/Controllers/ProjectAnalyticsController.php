@@ -39,7 +39,9 @@ class ProjectAnalyticsController extends Controller
             ->where('tenant_id', $resolvedProject->tenant_id)
             ->where('project_id', $resolvedProject->id)
             ->groupBy('channel')
-            ->pluck(DB::raw('COUNT(*)'), 'channel')
+            ->select('channel')
+            ->selectRaw('COUNT(*) as count')
+            ->pluck('count', 'channel')
             ->map(static fn (mixed $count): int => (int) $count)
             ->all();
 
@@ -58,7 +60,9 @@ class ProjectAnalyticsController extends Controller
             ->where('tenant_id', $resolvedProject->tenant_id)
             ->where('project_id', $resolvedProject->id)
             ->groupBy('rating')
-            ->pluck(DB::raw('COUNT(*)'), 'rating');
+            ->select('rating')
+            ->selectRaw('COUNT(*) as count')
+            ->pluck('count', 'rating');
 
         $helpful = (int) ($feedbackCounts['helpful'] ?? 0);
         $unhelpful = (int) ($feedbackCounts['unhelpful'] ?? 0);
@@ -107,7 +111,9 @@ class ProjectAnalyticsController extends Controller
             ->groupBy('from_number')
             ->orderByRaw('COUNT(*) DESC')
             ->limit(10)
-            ->pluck(DB::raw('COUNT(*)'), 'from_number')
+            ->select('from_number')
+            ->selectRaw('COUNT(*) as count')
+            ->pluck('count', 'from_number')
             ->map(static fn (mixed $count): int => (int) $count)
             ->all();
 
@@ -115,7 +121,9 @@ class ProjectAnalyticsController extends Controller
             ->where('created_at', '>=', now()->subDays(30))
             ->groupBy(DB::raw('DATE(created_at)'))
             ->orderBy(DB::raw('DATE(created_at)'))
-            ->pluck(DB::raw('COUNT(*)'), DB::raw('DATE(created_at)'))
+            ->selectRaw('DATE(created_at) as date')
+            ->selectRaw('COUNT(*) as count')
+            ->pluck('count', 'date')
             ->map(static fn (mixed $count): int => (int) $count)
             ->all();
 
