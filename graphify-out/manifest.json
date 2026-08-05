@@ -120,8 +120,8 @@
     "semantic_hash": ""
   },
   "app/Jobs/AnswerVoiceTurnJob.php": {
-    "mtime": 1785414135.03104,
-    "ast_hash": "877ffc8b015a8eaeed33081a108d10b5",
+    "mtime": 1785757004.7056339,
+    "ast_hash": "d75287a4a81d1517332e783499a8808e",
     "semantic_hash": ""
   },
   "app/Jobs/CrawlProjectWebsiteJob.php": {
@@ -230,13 +230,13 @@
     "semantic_hash": ""
   },
   "app/Services/Rag/AnswerOptions.php": {
-    "mtime": 1785414135.0347064,
-    "ast_hash": "8e088f9b02b08a6303ac135197d4f688",
+    "mtime": 1785757517.5002255,
+    "ast_hash": "023968e9c914f100bd7ec8ee56e1c248",
     "semantic_hash": ""
   },
   "app/Services/Rag/ChatAnswerService.php": {
-    "mtime": 1785414153.307774,
-    "ast_hash": "2c55dc58d11aee6a57d84a1a7ad4d800",
+    "mtime": 1785757430.466296,
+    "ast_hash": "8f1feaec635fcf65aa5ffbc5a6670212",
     "semantic_hash": ""
   },
   "app/Services/Rag/ConfluenceApiService.php": {
@@ -245,8 +245,8 @@
     "semantic_hash": ""
   },
   "app/Services/Rag/ContextRetrievalService.php": {
-    "mtime": 1785223441.1770496,
-    "ast_hash": "196c005dba21b6aef42cc8bcc91d28ac",
+    "mtime": 1785756973.5369723,
+    "ast_hash": "3aa063a668dccff508a742f0dd8455dc",
     "semantic_hash": ""
   },
   "app/Services/Rag/DocumentChunkingService.php": {
@@ -255,13 +255,13 @@
     "semantic_hash": ""
   },
   "app/Services/Rag/OllamaEmbeddingService.php": {
-    "mtime": 1785414175.2040231,
-    "ast_hash": "ed2399ef8896f8085397cf61334ef0e8",
+    "mtime": 1785758111.1153204,
+    "ast_hash": "55a5f6126b61f16e7893503778ad0e7f",
     "semantic_hash": ""
   },
   "app/Services/Rag/OllamaGenerationService.php": {
-    "mtime": 1785414175.2050357,
-    "ast_hash": "0b4c664004b5f107fcc0a666b53c5923",
+    "mtime": 1785758110.965263,
+    "ast_hash": "6d248183550df179053f3d92e13cb0cf",
     "semantic_hash": ""
   },
   "app/Services/Rag/Parsers/CsvParser.php": {
@@ -440,8 +440,8 @@
     "semantic_hash": ""
   },
   "config/rag.php": {
-    "mtime": 1785414134.779986,
-    "ast_hash": "1e9f795b66db0a65dd52fcdc44d6f312",
+    "mtime": 1785757968.9930656,
+    "ast_hash": "b99343b9eb67bf11906e9c339801e7e1",
     "semantic_hash": ""
   },
   "config/reverb.php": {
@@ -940,8 +940,8 @@
     "semantic_hash": ""
   },
   "tests/Feature/ProjectChatTest.php": {
-    "mtime": 1780601003.19915,
-    "ast_hash": "4fd0eaaa4c224e77c1d42cfedc6227c2",
+    "mtime": 1785758504.7845929,
+    "ast_hash": "939bb01c2464c8d8588b7488ea6bba3d",
     "semantic_hash": ""
   },
   "tests/Feature/ProjectDocumentIngestionTest.php": {
@@ -980,7 +980,7 @@
     "semantic_hash": ""
   },
   "tests/Unit/DocumentChunkingServiceTest.php": {
-    "mtime": 1775083310.6826386,
+    "mtime": 1785758627.7737708,
     "ast_hash": "87901e05f61246fa35703ae3b3732a97",
     "semantic_hash": ""
   },
@@ -1035,8 +1035,8 @@
     "semantic_hash": ""
   },
   "docs/twilio-voice-plan.md": {
-    "mtime": 1785414135.050709,
-    "ast_hash": "e80cb75e2c7ea075cd5e81ad4b396461",
+    "mtime": 1785758650.8598516,
+    "ast_hash": "769842c4c487c190863387b8d0eb619c",
     "semantic_hash": ""
   },
   "frontend/README.md": {
@@ -1087,6 +1087,21 @@
   "tests/Unit/TwilioNumberServiceTest.php": {
     "mtime": 1785741944.924395,
     "ast_hash": "0402a66174d10b5f5a539928ef64a816",
+    "semantic_hash": ""
+  },
+  "app/Console/Commands/WarmVoiceModelsCommand.php": {
+    "mtime": 1785757749.6501496,
+    "ast_hash": "1075ca5abd7c5990706314dd1363392a",
+    "semantic_hash": ""
+  },
+  "tests/Unit/AnswerOptionsTest.php": {
+    "mtime": 1785757035.2973287,
+    "ast_hash": "80a4f7d55d5dee0b7379c0f36b3f8fc5",
+    "semantic_hash": ""
+  },
+  "tests/Unit/OllamaKeepAliveTest.php": {
+    "mtime": 1785757550.3179138,
+    "ast_hash": "8f9a7ef615b31d302b3b5246511c00e6",
     "semantic_hash": ""
   }
 }

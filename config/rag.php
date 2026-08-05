@@ -56,10 +56,10 @@ return [
          * tokens took 284s, while gemma:2b with ~700 took 8.4s.
          */
         'generation_model' => env('VOICE_GENERATION_MODEL', env('OLLAMA_GENERATION_MODEL', 'llama3')),
-        'retrieval_top_k' => (int) env('VOICE_RETRIEVAL_TOP_K', 3),
-        'max_context_chars_per_chunk' => (int) env('VOICE_MAX_CONTEXT_CHARS_PER_CHUNK', 700),
+        'retrieval_top_k' => (int) env('VOICE_RETRIEVAL_TOP_K', 2),
+        'max_context_chars_per_chunk' => (int) env('VOICE_MAX_CONTEXT_CHARS_PER_CHUNK', 450),
         'history_turns' => (int) env('VOICE_HISTORY_TURNS', 4),
-        'num_predict' => (int) env('VOICE_NUM_PREDICT', 120),
+        'num_predict' => (int) env('VOICE_NUM_PREDICT', 80),
 
         /*
          * Ollama unloads an idle model after ~5 minutes. On a phone line that means the first

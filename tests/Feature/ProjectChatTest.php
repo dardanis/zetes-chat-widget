@@ -202,15 +202,20 @@ class ProjectChatTest extends TestCase
         ]);
 
         $embeddingService = Mockery::mock(OllamaEmbeddingService::class);
+        // The dashboard channel passes no per-channel overrides, unlike voice.
         $embeddingService->shouldReceive('embed')
             ->once()
-            ->with('Do we support realtime updates?')
+            ->with('Do we support realtime updates?', null, null)
             ->andReturn([0.15, 0.42, 0.73]);
 
         $retrievalService = Mockery::mock(ContextRetrievalService::class);
         $retrievalService->shouldReceive('retrieve')
             ->once()
-            ->withArgs(fn (Project $resolvedProject, string $question, array $embedding): bool => $resolvedProject->is($project) && $question === 'Do we support realtime updates?' && $embedding === [0.15, 0.42, 0.73])
+            ->withArgs(fn (Project $resolvedProject, string $question, array $embedding, ?int $selectedDocumentId = null, ?int $topK = null): bool => $resolvedProject->is($project)
+                && $question === 'Do we support realtime updates?'
+                && $embedding === [0.15, 0.42, 0.73]
+                // Dashboard keeps the default retrieval budget; only voice narrows it.
+                && $topK === null)
             ->andReturn([
                 [
                     'chunk_id' => $chunk->id,

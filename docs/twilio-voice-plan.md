@@ -441,6 +441,47 @@ each phase is called done.
 
 ---
 
+## 11b. Measured latency (2026-08-03, this hardware)
+
+The first live call failed exactly where the plan predicted. Numbers from the real pipeline:
+
+| model | prompt tokens | wall time |
+| --- | --- | --- |
+| llama3 (8B) | 2013 | **284 s** |
+| llama3 (8B) | 693 | 135 s |
+| gemma:2b | 2028 | 87 s |
+| gemma:2b | 708 | **8.4 s** |
+
+Prompt *processing* dominates — 270 s of that 284 s — so the retrieval budget is a bigger lever
+than the model choice, and the two multiply. Measured generation throughput for `gemma:2b` here is
+~31 prompt tok/s and ~8 output tok/s.
+
+Settings that resulted (`config/rag.php` → `rag.voice`): `gemma:2b`, `retrieval_top_k` 2,
+`max_context_chars_per_chunk` 450, `num_predict` 80. End-to-end turns then measured **4.5–12.8 s**
+across five consecutive runs, against a 45 s hold budget.
+
+**The timeout ladder must stay ordered**, shortest first — this is what actually broke the first
+call, where a 120 s Ollama timeout sat outside a 45 s hold budget:
+
+```
+ollama_timeout_seconds (35s)  <  answer_timeout_seconds (45s)  <  job timeout (60s)
+```
+
+`tests/Unit/AnswerOptionsTest.php` asserts that ordering so it cannot silently invert again.
+
+### Two operational requirements
+
+- **Warm the models before taking calls**: `php artisan voice:warm`. A cold model load exceeds any
+  single turn's budget, so the first caller after an Ollama or machine restart would otherwise hear
+  the fallback message. `rag.voice.model_keep_alive` (default `-1`) then pins them resident.
+- **`keep_alive` is type-sensitive**: Ollama parses a string as a Go duration, so `"-1"` is rejected
+  with `missing unit in duration` and *every* request 400s. The number `-1` means "never unload".
+  Normalised in config; guarded by `tests/Unit/OllamaKeepAliveTest.php`.
+
+Pinning the voice models holds ~2.2 GB of VRAM. The widget and dashboard channels still use the
+larger `OLLAMA_GENERATION_MODEL`, so on a constrained GPU the two will contend — watch
+`curl localhost:11434/api/ps` if widget answers slow down after enabling voice.
+
 ## 12. Risks
 
 | Risk | Mitigation |
