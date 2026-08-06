@@ -1103,5 +1103,10 @@
     "mtime": 1786010120.4644856,
     "ast_hash": "18f2ac5ba8070cda8dd87a2e106bc6d2",
     "semantic_hash": ""
+  },
+  "app/Console/Commands/VoiceDoctorCommand.php": {
+    "mtime": 1786014329.6399786,
+    "ast_hash": "d98b1f652da27cc1b0bb96b1acde28ae",
+    "semantic_hash": ""
   }
 }
