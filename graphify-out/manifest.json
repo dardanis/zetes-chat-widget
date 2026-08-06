@@ -105,8 +105,8 @@
     "semantic_hash": ""
   },
   "app/Http/Middleware/ValidateCsrfToken.php": {
-    "mtime": 1775555362.9859214,
-    "ast_hash": "5e8243b93aa52781d4fdd1b14108815d",
+    "mtime": 1786017866.1331885,
+    "ast_hash": "cf8d306e158607204baa208a085cb5b0",
     "semantic_hash": ""
   },
   "app/Http/Middleware/ValidateTwilioRequest.php": {
@@ -130,7 +130,7 @@
     "semantic_hash": ""
   },
   "app/Jobs/EmbedDocumentChunkJob.php": {
-    "mtime": 1775082729.1966126,
+    "mtime": 1786017722.4042935,
     "ast_hash": "7f6ed879ec962b083551b137cf1558cc",
     "semantic_hash": ""
   },
@@ -260,7 +260,7 @@
     "semantic_hash": ""
   },
   "app/Services/Rag/OllamaGenerationService.php": {
-    "mtime": 1786010120.2612047,
+    "mtime": 1786017722.4497418,
     "ast_hash": "6d248183550df179053f3d92e13cb0cf",
     "semantic_hash": ""
   },
@@ -440,7 +440,7 @@
     "semantic_hash": ""
   },
   "config/rag.php": {
-    "mtime": 1786010120.2757657,
+    "mtime": 1786017722.5202255,
     "ast_hash": "b99343b9eb67bf11906e9c339801e7e1",
     "semantic_hash": ""
   },
@@ -940,7 +940,7 @@
     "semantic_hash": ""
   },
   "tests/Feature/ProjectDocumentIngestionTest.php": {
-    "mtime": 1780656103.170058,
+    "mtime": 1786017722.830621,
     "ast_hash": "ae2b10635f36bf3f67446552b53041e9",
     "semantic_hash": ""
   },
@@ -1107,6 +1107,11 @@
   "app/Console/Commands/VoiceDoctorCommand.php": {
     "mtime": 1786014329.6399786,
     "ast_hash": "d98b1f652da27cc1b0bb96b1acde28ae",
+    "semantic_hash": ""
+  },
+  "tests/Unit/CsrfExclusionTest.php": {
+    "mtime": 1786017866.1952007,
+    "ast_hash": "139505c8a461dec0dd9f5fd4e5f60ce0",
     "semantic_hash": ""
   }
 }
