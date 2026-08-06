@@ -29,7 +29,7 @@ class TwilioVoiceCallTest extends TestCase
         config([
             'services.twilio.validate_signature' => false,
             'services.twilio.auth_token' => 'test-auth-token',
-            'services.twilio.webhook_base_url' => 'https://voice.test',
+            'services.twilio.webhook_base_url' => 'https://voice.example.test-host.com',
         ]);
     }
 
@@ -81,11 +81,55 @@ class TwilioVoiceCallTest extends TestCase
         $this->assertStringContainsString('<Gather', $body);
         $this->assertStringContainsString('input="speech"', $body);
         $this->assertStringContainsString('actionOnEmptyResult="true"', $body);
-        $this->assertStringContainsString('https://voice.test/api/twilio/voice/turn', $body);
+        $this->assertStringContainsString('https://voice.example.test-host.com/api/twilio/voice/turn', $body);
 
         // <Say> must be nested inside <Gather>: that is what allows the caller to barge in.
         $this->assertMatchesRegularExpression('#<Gather[^>]*>\s*<Say[^>]*>#', $body);
         $this->assertStringContainsString('How can I help you today?', $body);
+    }
+
+    /**
+     * A base URL Twilio cannot reach fails silently: the caller hears "an application error has
+     * occurred" and nothing is logged, because the follow-up request never arrives. Fall back to
+     * the origin Twilio actually reached us on rather than emitting an unusable callback URL.
+     */
+    public function test_unreachable_webhook_base_url_falls_back_to_the_request_origin(): void
+    {
+        foreach (['http://localhost', 'http://127.0.0.1:81', 'http://zetes-chat-widget.test:81', ''] as $unreachable) {
+            config(['services.twilio.webhook_base_url' => $unreachable]);
+
+            $project = $this->createVoiceProject(phoneNumber: '+3834412'.random_int(1000, 9999));
+
+            // Absolute URI so the request carries the public origin Twilio reached us on.
+            $body = $this->post('https://calls.example.com/api/twilio/voice/incoming', [
+                'CallSid' => 'CA'.random_int(100000, 999999),
+                'From' => '+38344111222',
+                'To' => $project->phone_number,
+            ])->assertOk()->getContent();
+
+            $this->assertStringContainsString(
+                'https://calls.example.com/api/twilio/voice/turn',
+                $body,
+                "Should fall back to the request origin for unreachable base [{$unreachable}]."
+            );
+            $this->assertStringNotContainsString('127.0.0.1', $body);
+            $this->assertStringNotContainsString('.test/', $body);
+        }
+    }
+
+    public function test_public_webhook_base_url_is_used_verbatim(): void
+    {
+        config(['services.twilio.webhook_base_url' => 'https://voice.example.com']);
+
+        $project = $this->createVoiceProject();
+
+        $body = $this->post('/api/twilio/voice/incoming', [
+            'CallSid' => 'CA55501',
+            'From' => '+38344111222',
+            'To' => $project->phone_number,
+        ])->assertOk()->getContent();
+
+        $this->assertStringContainsString('https://voice.example.com/api/twilio/voice/turn', $body);
     }
 
     public function test_retried_incoming_webhook_does_not_open_a_second_session(): void
@@ -430,7 +474,7 @@ class TwilioVoiceCallTest extends TestCase
         ];
 
         $validator = new RequestValidator('test-auth-token');
-        $signature = $validator->computeSignature('https://voice.test/api/twilio/voice/incoming', $payload);
+        $signature = $validator->computeSignature('https://voice.example.test-host.com/api/twilio/voice/incoming', $payload);
 
         $this->post('/api/twilio/voice/incoming', $payload, ['X-Twilio-Signature' => $signature])
             ->assertOk();

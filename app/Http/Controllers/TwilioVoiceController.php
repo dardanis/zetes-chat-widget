@@ -407,9 +407,46 @@ class TwilioVoiceController extends Controller
      */
     private function action(string $action, array $query = []): string
     {
-        $url = $this->numberService->webhookUrl($action);
+        $url = $this->publicWebhookUrl($action);
 
         return $query === [] ? $url : $url.'?'.http_build_query($query);
+    }
+
+    /**
+     * The URL Twilio must call back on for the next turn.
+     *
+     * A misconfigured base here fails silently and confusingly: Twilio simply cannot reach the
+     * follow-up URL, so the caller hears "an application error has occurred" and nothing is ever
+     * logged, because the request never arrives. Guard against that by rejecting bases that are
+     * obviously not routable from the internet and falling back to the origin Twilio actually
+     * reached us on, which is ground truth by definition.
+     */
+    private function publicWebhookUrl(string $action): string
+    {
+        $configured = rtrim((string) config('services.twilio.webhook_base_url'), '/');
+
+        if ($configured !== '' && ! $this->isUnreachableFromTwilio($configured)) {
+            return $configured.'/api/twilio/voice/'.ltrim($action, '/');
+        }
+
+        $derived = rtrim(request()->getSchemeAndHttpHost(), '/');
+
+        Log::error('TWILIO_WEBHOOK_BASE_URL is missing or not reachable from the internet. Twilio cannot call back, so callers hear "an application error has occurred". Falling back to the request origin.', [
+            'configured' => $configured !== '' ? $configured : '(empty)',
+            'falling_back_to' => $derived,
+        ]);
+
+        return $derived.'/api/twilio/voice/'.ltrim($action, '/');
+    }
+
+    private function isUnreachableFromTwilio(string $url): bool
+    {
+        $host = parse_url($url, PHP_URL_HOST) ?: $url;
+
+        return (bool) preg_match(
+            '/^(localhost|127\.\d+\.\d+\.\d+|0\.0\.0\.0|\[?::1\]?|.+\.(test|local|localhost|internal))$/i',
+            $host
+        );
     }
 
     private function twiml(VoiceResponse $response): Response
