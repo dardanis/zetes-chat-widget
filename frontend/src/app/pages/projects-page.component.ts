@@ -12,42 +12,48 @@ import { Country, Project, RagApiService, Tenant } from '../core/rag-api.service
   imports: [FormsModule, RouterLink],
   template: `
     <section class="space-y-6">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 class="text-xl font-semibold text-[var(--app-text)]">Projects</h2>
-          <p class="mt-1 text-sm text-[var(--app-text-muted)]">Manage RAG projects by tenant and country.</p>
+      <div class="app-panel app-panel-hover rounded-[28px] p-6 sm:p-7">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div class="inline-flex items-center gap-2 rounded-full border border-[var(--app-accent)]/20 bg-[var(--app-accent-soft)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--app-accent)]">
+              <span class="h-2 w-2 rounded-full bg-[var(--app-accent)]"></span>
+              Project workspace
+            </div>
+            <h2 class="mt-4 text-xl font-semibold tracking-tight text-[var(--app-text)]">Projects</h2>
+            <p class="mt-1 text-sm text-[var(--app-text-muted)]">Manage RAG projects by tenant and country.</p>
+          </div>
+          <button type="button" (click)="openCreateModal()" class="app-interactive app-hover-lift rounded-2xl bg-[var(--app-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(34,211,238,0.18)] hover:opacity-90">
+            Create project
+          </button>
         </div>
-        <button type="button" (click)="openCreateModal()" class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
-          Create project
-        </button>
       </div>
 
-      <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+      <div class="app-panel rounded-[24px] p-4">
         <label class="block">
           <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Search projects</span>
-          <input name="projectSearch" [(ngModel)]="searchTerm" (ngModelChange)="searchProjects()" placeholder="Search by project, tenant, country, or status" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition placeholder:text-[var(--app-text-muted)] focus:ring-2" />
+          <input name="projectSearch" [(ngModel)]="searchTerm" (ngModelChange)="searchProjects()" placeholder="Search by project, tenant, country, or status" class="app-input w-full rounded-2xl px-3 py-2.5 text-sm placeholder:text-[var(--app-text-muted)]" />
         </label>
       </div>
 
       @if (isCreateModalOpen()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm" (click)="closeCreateModal()">
-          <form class="w-full max-w-2xl overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-2xl" (click)="$event.stopPropagation()" (ngSubmit)="createProject()">
+          <form class="app-panel w-full max-w-2xl overflow-hidden rounded-[28px] shadow-[0_24px_70px_rgba(2,6,23,0.28)]" (click)="$event.stopPropagation()" (ngSubmit)="createProject()">
             <div class="flex items-start justify-between gap-4 border-b border-[var(--app-border)] px-5 py-4">
               <div>
                 <h3 class="text-base font-semibold text-[var(--app-text)]">Create project</h3>
                 <p class="mt-1 text-sm text-[var(--app-text-muted)]">Choose a tenant, country, and project name.</p>
               </div>
-              <button type="button" (click)="closeCreateModal()" class="rounded-md px-2 py-1 text-sm text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Close</button>
+              <button type="button" (click)="closeCreateModal()" class="app-interactive rounded-xl px-2 py-1 text-sm text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Close</button>
             </div>
 
             <div class="space-y-4 px-5 py-4">
               @if (createError()) {
-                <p class="rounded-md border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 px-3 py-2 text-sm text-[var(--app-danger)]">{{ createError() }}</p>
+                <p class="rounded-2xl border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 px-3 py-2 text-sm text-[var(--app-danger)]">{{ createError() }}</p>
               }
 
               <label class="block">
                 <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Tenant</span>
-                <select name="tenantId" [(ngModel)]="selectedTenantId" (ngModelChange)="syncCountryFromTenant()" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 focus:ring-2">
+                <select name="tenantId" [(ngModel)]="selectedTenantId" (ngModelChange)="syncCountryFromTenant()" class="app-input w-full rounded-2xl px-3 py-2.5 text-sm">
                   <option [ngValue]="null">Select tenant</option>
                   @for (tenant of tenants(); track tenant.id) {
                     <option [ngValue]="tenant.id">{{ tenant.name }} · {{ labelCountry(tenant.country_code) }}</option>
@@ -57,7 +63,7 @@ import { Country, Project, RagApiService, Tenant } from '../core/rag-api.service
 
               <label class="block">
                 <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Country</span>
-                <select name="countryCode" [(ngModel)]="newProjectCountryCode" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 focus:ring-2">
+                <select name="countryCode" [(ngModel)]="newProjectCountryCode" class="app-input w-full rounded-2xl px-3 py-2.5 text-sm">
                   <option value="">Select country</option>
                   @for (country of countries(); track country.code) {
                     <option [value]="country.code">{{ country.name }} ({{ country.code }})</option>
@@ -67,13 +73,13 @@ import { Country, Project, RagApiService, Tenant } from '../core/rag-api.service
 
               <label class="block">
                 <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Project name</span>
-                <input name="projectName" [(ngModel)]="newProjectName" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2" />
+                <input name="projectName" [(ngModel)]="newProjectName" class="app-input w-full rounded-2xl px-3 py-2.5 text-sm" />
               </label>
             </div>
 
             <div class="flex justify-end gap-2 border-t border-[var(--app-border)] px-5 py-4">
-              <button type="button" (click)="closeCreateModal()" class="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm font-semibold text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Cancel</button>
-              <button type="submit" [disabled]="isCreating()" class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60">
+              <button type="button" (click)="closeCreateModal()" class="app-interactive rounded-2xl border border-[var(--app-border)] px-4 py-2 text-sm font-semibold text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Cancel</button>
+              <button type="submit" [disabled]="isCreating()" class="app-interactive rounded-2xl bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(34,211,238,0.18)] hover:opacity-90 disabled:opacity-60">
                 {{ isCreating() ? 'Creating...' : 'Create project' }}
               </button>
             </div>
@@ -84,19 +90,19 @@ import { Country, Project, RagApiService, Tenant } from '../core/rag-api.service
       <!-- Project list -->
       @if (isLoading()) {
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <div class="h-36 animate-pulse rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"></div>
-          <div class="h-36 animate-pulse rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"></div>
-          <div class="h-36 animate-pulse rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"></div>
+          <div class="app-panel h-36 animate-pulse rounded-[24px]"></div>
+          <div class="app-panel h-36 animate-pulse rounded-[24px]"></div>
+          <div class="app-panel h-36 animate-pulse rounded-[24px]"></div>
         </div>
       } @else if (loadError()) {
-        <div class="rounded-xl border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 p-6 text-center">
+        <div class="app-panel rounded-[24px] border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 p-6 text-center">
           <p class="text-sm text-[var(--app-danger)]">{{ loadError() }}</p>
-          <button type="button" (click)="load()" class="mt-3 rounded-md border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 py-2 text-sm text-[var(--app-text)] hover:opacity-90">Retry</button>
+          <button type="button" (click)="load()" class="app-interactive mt-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 py-2 text-sm text-[var(--app-text)] hover:opacity-90">Retry</button>
         </div>
       } @else {
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           @for (project of projects(); track project.id) {
-            <div class="group rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 transition hover:opacity-95">
+            <div class="app-panel app-panel-hover rounded-[24px] p-5">
               @if (editingId() === project.id) {
                 <div class="space-y-3">
                   <input [(ngModel)]="editProjectName" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 focus:ring-2" />
@@ -128,9 +134,9 @@ import { Country, Project, RagApiService, Tenant } from '../core/rag-api.service
                 </div>
 
                 <div class="mt-4 flex flex-wrap gap-2 border-t border-[var(--app-border)] pt-3">
-                  <a [routerLink]="['/app/projects', project.id, 'overview']" class="rounded-md bg-[var(--app-accent-soft)] px-2.5 py-1 text-xs font-medium text-[var(--app-accent)] transition hover:opacity-90">Open</a>
-                  <button type="button" (click)="startEdit(project)" class="rounded-md border border-[var(--app-border)] px-2.5 py-1 text-xs font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)]">Edit</button>
-                  <button type="button" (click)="startDelete(project)" class="rounded-md border border-[var(--app-danger)]/50 px-2.5 py-1 text-xs font-medium text-[var(--app-danger)] transition hover:bg-[var(--app-danger)]/10">Delete</button>
+                  <a [routerLink]="['/app/projects', project.id, 'overview']" class="app-interactive rounded-xl bg-[var(--app-accent-soft)] px-2.5 py-1 text-xs font-medium text-[var(--app-accent)] hover:opacity-90">Open</a>
+                  <button type="button" (click)="startEdit(project)" class="app-interactive rounded-xl border border-[var(--app-border)] px-2.5 py-1 text-xs font-medium text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Edit</button>
+                  <button type="button" (click)="startDelete(project)" class="app-interactive rounded-xl border border-[var(--app-danger)]/50 px-2.5 py-1 text-xs font-medium text-[var(--app-danger)] hover:bg-[var(--app-danger)]/10">Delete</button>
                 </div>
               }
             </div>

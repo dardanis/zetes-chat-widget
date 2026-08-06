@@ -9,49 +9,64 @@ import { DashboardStats, RagApiService } from '../core/rag-api.service';
   imports: [RouterLink],
   template: `
     <section class="space-y-6">
-      <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6">
-        <h1 class="text-2xl font-semibold text-[var(--app-text)]">Dashboard</h1>
-        <p class="mt-2 text-[var(--app-text-muted)]">Overview of your RAG workspace - tenants, projects, documents, and chat activity.</p>
+      <div class="app-panel app-panel-hover rounded-[28px] p-6 sm:p-8">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div class="max-w-2xl">
+            <div class="inline-flex items-center gap-2 rounded-full border border-[var(--app-accent)]/20 bg-[var(--app-accent-soft)] px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-[var(--app-accent)]">
+              <span class="h-2 w-2 rounded-full bg-[var(--app-accent)]"></span>
+              Workspace overview
+            </div>
+            <h1 class="mt-4 text-2xl font-semibold tracking-tight text-[var(--app-text)] sm:text-3xl">Welcome back</h1>
+            <p class="mt-2 text-sm leading-6 text-[var(--app-text-muted)] sm:text-base">Keep your tenants, projects, documents, and conversations moving with calm, focused controls.</p>
 
-        @if (auth.user(); as user) {
-          <p class="mt-4 text-sm text-[var(--app-text-muted)]">Signed in as <span class="font-medium text-[var(--app-text)]">{{ user.name }}</span> ({{ user.email }})</p>
-        }
+            @if (auth.user(); as user) {
+              <p class="mt-4 text-sm text-[var(--app-text-muted)]">Signed in as <span class="font-medium text-[var(--app-text)]">{{ user.name }}</span> ({{ user.email }})</p>
+            }
+          </div>
+
+          <div class="rounded-2xl border border-[var(--app-border)]/80 bg-[var(--app-surface-2)]/70 px-4 py-3 text-sm text-[var(--app-text-muted)]">
+            <p class="font-medium text-[var(--app-text)]">Fast actions</p>
+            <p class="mt-1">Review the latest projects and jump to the next most important task.</p>
+          </div>
+        </div>
       </div>
 
       @if (isLoading()) {
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div class="h-28 animate-pulse rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"></div>
-          <div class="h-28 animate-pulse rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"></div>
-          <div class="h-28 animate-pulse rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"></div>
-          <div class="h-28 animate-pulse rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"></div>
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div class="app-panel h-28 animate-pulse rounded-[24px]"></div>
+          }
         </div>
       } @else if (stats()) {
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
-            <p class="text-xs font-medium uppercase tracking-wider text-[var(--app-text-muted)]">Tenants</p>
-            <p class="mt-1 text-2xl font-bold text-[var(--app-text)]">{{ stats()!.total_tenants }}</p>
+          <div class="app-panel app-panel-hover rounded-[24px] p-5">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--app-text-muted)]">Tenants</p>
+            <p class="mt-2 text-3xl font-semibold tracking-tight text-[var(--app-text)]">{{ stats()!.total_tenants }}</p>
           </div>
-          <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
-            <p class="text-xs font-medium uppercase tracking-wider text-[var(--app-text-muted)]">Projects</p>
-            <p class="mt-1 text-2xl font-bold text-[var(--app-text)]">{{ stats()!.total_projects }}</p>
+          <div class="app-panel app-panel-hover rounded-[24px] p-5">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--app-text-muted)]">Projects</p>
+            <p class="mt-2 text-3xl font-semibold tracking-tight text-[var(--app-text)]">{{ stats()!.total_projects }}</p>
           </div>
-          <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
-            <p class="text-xs font-medium uppercase tracking-wider text-[var(--app-text-muted)]">Documents</p>
-            <p class="mt-1 text-2xl font-bold text-[var(--app-text)]">{{ stats()!.total_documents }}</p>
+          <div class="app-panel app-panel-hover rounded-[24px] p-5">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--app-text-muted)]">Documents</p>
+            <p class="mt-2 text-3xl font-semibold tracking-tight text-[var(--app-text)]">{{ stats()!.total_documents }}</p>
           </div>
-          <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
-            <p class="text-xs font-medium uppercase tracking-wider text-[var(--app-text-muted)]">Chat sessions</p>
-            <p class="mt-1 text-2xl font-bold text-[var(--app-text)]">{{ stats()!.total_chats }}</p>
+          <div class="app-panel app-panel-hover rounded-[24px] p-5">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--app-text-muted)]">Chat sessions</p>
+            <p class="mt-2 text-3xl font-semibold tracking-tight text-[var(--app-text)]">{{ stats()!.total_chats }}</p>
           </div>
         </div>
 
         @if (hasDocumentStatuses()) {
-          <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
-            <h3 class="text-sm font-semibold text-[var(--app-text)]">Documents by status</h3>
-            <div class="mt-3 flex flex-wrap gap-3">
+          <div class="app-panel rounded-[24px] p-5">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="text-sm font-semibold text-[var(--app-text)]">Documents by status</h3>
+              <span class="text-xs font-medium uppercase tracking-[0.2em] text-[var(--app-text-muted)]">Live</span>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-3">
               @for (entry of documentStatusEntries(); track entry.status) {
-                <div class="rounded-lg bg-[var(--app-surface-2)] px-4 py-2.5">
-                  <p class="text-xs font-medium uppercase tracking-wider text-[var(--app-text-muted)]">{{ entry.status }}</p>
+                <div class="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-2)]/70 px-4 py-3">
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--app-text-muted)]">{{ entry.status }}</p>
                   <p class="mt-1 text-lg font-semibold text-[var(--app-text)]">{{ entry.count }}</p>
                 </div>
               }
@@ -60,12 +75,12 @@ import { DashboardStats, RagApiService } from '../core/rag-api.service';
         }
 
         <div class="grid gap-6 lg:grid-cols-2">
-          <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
+          <div class="app-panel rounded-[24px] p-5">
             <h3 class="text-sm font-semibold text-[var(--app-text)]">Recent projects</h3>
 
-            <div class="mt-3 space-y-2">
+            <div class="mt-4 space-y-2">
               @for (project of stats()!.recent_projects; track project.id) {
-                <a [routerLink]="['/app/projects', project.id, 'overview']" class="flex items-center justify-between gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 py-3 transition hover:opacity-90">
+                <a [routerLink]="['/app/projects', project.id, 'overview']" class="app-interactive app-hover-lift flex items-center justify-between gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-2)]/70 px-4 py-3 hover:border-[var(--app-accent)]/30">
                   <div class="min-w-0">
                     <p class="truncate text-sm font-medium text-[var(--app-text)]">{{ project.name }}</p>
                     <p class="mt-0.5 text-xs text-[var(--app-text-muted)]">{{ project.tenant?.name ?? 'Tenant #' + project.tenant_id }}</p>
@@ -78,25 +93,25 @@ import { DashboardStats, RagApiService } from '../core/rag-api.service';
             </div>
           </div>
 
-          <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
+          <div class="app-panel rounded-[24px] p-5">
             <h3 class="text-sm font-semibold text-[var(--app-text)]">Quick actions</h3>
 
-            <div class="mt-3 space-y-2">
-              <a routerLink="/app/tenants" class="flex items-center gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 py-3 transition hover:opacity-90">
+            <div class="mt-4 space-y-2">
+              <a routerLink="/app/tenants" class="app-interactive app-hover-lift flex items-center gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-2)]/70 px-4 py-3 hover:border-[var(--app-accent)]/30">
                 <div>
                   <p class="text-sm font-medium text-[var(--app-text)]">Manage tenants</p>
                   <p class="text-xs text-[var(--app-text-muted)]">Create, edit, or remove organizations</p>
                 </div>
               </a>
 
-              <a routerLink="/app/projects" class="flex items-center gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 py-3 transition hover:opacity-90">
+              <a routerLink="/app/projects" class="app-interactive app-hover-lift flex items-center gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-2)]/70 px-4 py-3 hover:border-[var(--app-accent)]/30">
                 <div>
                   <p class="text-sm font-medium text-[var(--app-text)]">Manage projects</p>
                   <p class="text-xs text-[var(--app-text-muted)]">Upload documents, embed widgets, chat</p>
                 </div>
               </a>
 
-              <a routerLink="/app/settings" class="flex items-center gap-3 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 py-3 transition hover:opacity-90">
+              <a routerLink="/app/settings" class="app-interactive app-hover-lift flex items-center gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-2)]/70 px-4 py-3 hover:border-[var(--app-accent)]/30">
                 <div>
                   <p class="text-sm font-medium text-[var(--app-text)]">Settings</p>
                   <p class="text-xs text-[var(--app-text-muted)]">Account info and configuration</p>

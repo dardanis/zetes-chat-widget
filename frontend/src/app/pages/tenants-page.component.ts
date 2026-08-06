@@ -11,47 +11,53 @@ import { Country, RagApiService, Tenant } from '../core/rag-api.service';
   imports: [FormsModule],
   template: `
     <section class="space-y-6">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 class="text-xl font-semibold text-[var(--app-text)]">Tenants</h2>
-          <p class="mt-1 text-sm text-[var(--app-text-muted)]">Manage organizations by country.</p>
+      <div class="app-panel app-panel-hover rounded-[28px] p-6 sm:p-7">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div class="inline-flex items-center gap-2 rounded-full border border-[var(--app-accent)]/20 bg-[var(--app-accent-soft)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--app-accent)]">
+              <span class="h-2 w-2 rounded-full bg-[var(--app-accent)]"></span>
+              Tenant directory
+            </div>
+            <h2 class="mt-4 text-xl font-semibold tracking-tight text-[var(--app-text)]">Tenants</h2>
+            <p class="mt-1 text-sm text-[var(--app-text-muted)]">Manage organizations by country.</p>
+          </div>
+          <button type="button" (click)="openCreateModal()" class="app-interactive app-hover-lift rounded-2xl bg-[var(--app-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(34,211,238,0.18)] hover:opacity-90">
+            Create tenant
+          </button>
         </div>
-        <button type="button" (click)="openCreateModal()" class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
-          Create tenant
-        </button>
       </div>
 
-      <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+      <div class="app-panel rounded-[24px] p-4">
         <label class="block">
           <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Search tenants</span>
-          <input name="tenantSearch" [(ngModel)]="searchTerm" (ngModelChange)="searchTenants()" placeholder="Search by tenant, country, or status" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition placeholder:text-[var(--app-text-muted)] focus:ring-2" />
+          <input name="tenantSearch" [(ngModel)]="searchTerm" (ngModelChange)="searchTenants()" placeholder="Search by tenant, country, or status" class="app-input w-full rounded-2xl px-3 py-2.5 text-sm placeholder:text-[var(--app-text-muted)]" />
         </label>
       </div>
 
       @if (isCreateModalOpen()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm" (click)="closeCreateModal()">
-          <form class="w-full max-w-2xl overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-2xl" (click)="$event.stopPropagation()" (ngSubmit)="create()">
+          <form class="app-panel w-full max-w-2xl overflow-hidden rounded-[28px] shadow-[0_24px_70px_rgba(2,6,23,0.28)]" (click)="$event.stopPropagation()" (ngSubmit)="create()">
             <div class="flex items-start justify-between gap-4 border-b border-[var(--app-border)] px-5 py-4">
               <div>
                 <h3 class="text-base font-semibold text-[var(--app-text)]">Create tenant</h3>
                 <p class="mt-1 text-sm text-[var(--app-text-muted)]">Choose a tenant name and country.</p>
               </div>
-              <button type="button" (click)="closeCreateModal()" class="rounded-md px-2 py-1 text-sm text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Close</button>
+              <button type="button" (click)="closeCreateModal()" class="app-interactive rounded-xl px-2 py-1 text-sm text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Close</button>
             </div>
 
             <div class="space-y-4 px-5 py-4">
               @if (createError()) {
-                <p class="rounded-md border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 px-3 py-2 text-sm text-[var(--app-danger)]">{{ createError() }}</p>
+                <p class="rounded-2xl border border-[var(--app-danger)]/40 bg-[var(--app-danger)]/10 px-3 py-2 text-sm text-[var(--app-danger)]">{{ createError() }}</p>
               }
 
               <label class="block">
                 <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Tenant name</span>
-                <input name="tenantName" [(ngModel)]="newName" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 transition focus:ring-2" />
+                <input name="tenantName" [(ngModel)]="newName" class="app-input w-full rounded-2xl px-3 py-2.5 text-sm" />
               </label>
 
               <label class="block">
                 <span class="mb-1 block text-xs font-medium text-[var(--app-text-muted)]">Country</span>
-                <select name="tenantCountry" [(ngModel)]="newCountryCode" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none ring-[var(--app-accent)]/40 focus:ring-2">
+                <select name="tenantCountry" [(ngModel)]="newCountryCode" class="app-input w-full rounded-2xl px-3 py-2.5 text-sm">
                   <option value="">Select country</option>
                   @for (country of countries(); track country.code) {
                     <option [value]="country.code">{{ country.name }} ({{ country.code }})</option>
@@ -61,8 +67,8 @@ import { Country, RagApiService, Tenant } from '../core/rag-api.service';
             </div>
 
             <div class="flex justify-end gap-2 border-t border-[var(--app-border)] px-5 py-4">
-              <button type="button" (click)="closeCreateModal()" class="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm font-semibold text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Cancel</button>
-              <button type="submit" [disabled]="isCreating()" class="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60">
+              <button type="button" (click)="closeCreateModal()" class="app-interactive rounded-2xl border border-[var(--app-border)] px-4 py-2 text-sm font-semibold text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Cancel</button>
+              <button type="submit" [disabled]="isCreating()" class="app-interactive rounded-2xl bg-[var(--app-accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(34,211,238,0.18)] hover:opacity-90 disabled:opacity-60">
                 {{ isCreating() ? 'Creating...' : 'Create tenant' }}
               </button>
             </div>
@@ -73,13 +79,13 @@ import { Country, RagApiService, Tenant } from '../core/rag-api.service';
       <!-- Tenant list -->
       @if (isLoading()) {
         <div class="space-y-3">
-          <div class="h-20 animate-pulse rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"></div>
-          <div class="h-20 animate-pulse rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"></div>
+          <div class="app-panel h-20 animate-pulse rounded-[24px]"></div>
+          <div class="app-panel h-20 animate-pulse rounded-[24px]"></div>
         </div>
       } @else {
         <div class="space-y-3">
           @for (tenant of tenants(); track tenant.id) {
-            <div class="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
+            <div class="app-panel app-panel-hover rounded-[24px] p-5">
               @if (editingId() === tenant.id) {
                 <!-- Edit mode -->
                 <div class="flex flex-col gap-3 md:flex-row">
@@ -109,8 +115,8 @@ import { Country, RagApiService, Tenant } from '../core/rag-api.service';
                     <p class="mt-1 text-xs text-[var(--app-text-muted)]">{{ labelCountry(tenant.country_code) }} · {{ tenant.status }}</p>
                   </div>
                   <div class="flex gap-2">
-                    <button type="button" (click)="startEdit(tenant)" class="rounded-lg border border-[var(--app-border)] px-3 py-1.5 text-xs font-medium text-[var(--app-text-muted)] transition hover:bg-[var(--app-surface-2)]">Edit</button>
-                    <button type="button" (click)="startDelete(tenant)" class="rounded-lg border border-[var(--app-danger)]/50 px-3 py-1.5 text-xs font-medium text-[var(--app-danger)] transition hover:bg-[var(--app-danger)]/10">Delete</button>
+                    <button type="button" (click)="startEdit(tenant)" class="app-interactive rounded-xl border border-[var(--app-border)] px-3 py-1.5 text-xs font-medium text-[var(--app-text-muted)] hover:bg-[var(--app-surface-2)]">Edit</button>
+                    <button type="button" (click)="startDelete(tenant)" class="app-interactive rounded-xl border border-[var(--app-danger)]/50 px-3 py-1.5 text-xs font-medium text-[var(--app-danger)] hover:bg-[var(--app-danger)]/10">Delete</button>
                   </div>
                 </div>
               }
