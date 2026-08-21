@@ -1,16 +1,16 @@
-# Graph Report - zetes-chat-widget  (2026-08-06)
+# Graph Report - zetes-chat-widget  (2026-08-20)
 
 ## Corpus Check
-- 214 files · ~92,114 words
+- 214 files · ~93,292 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3730 nodes · 10067 edges · 161 communities (135 shown, 26 thin omitted)
+- 3749 nodes · 10110 edges · 169 communities (139 shown, 30 thin omitted)
 - Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 647 edges (avg confidence: 0.69)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `f81d5068`
+- Built from commit: `35a20d52`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -101,6 +101,7 @@
 - Build Builder
 - Build Scripts
 - Tsconfig Widget
+- WebsiteCrawlerService
 - Docxparser Phpoffice
 - Xmlparser Php
 - Install Php
@@ -116,6 +117,7 @@
 - Configurations Development
 - Prefix Projecttype
 - Appserviceprovider Php
+- sk
 - Database Autoload
 - Production Budgets
 - Package Json
@@ -127,14 +129,18 @@
 - Validatecsrftoken Php
 - Keywords Framework
 - Php Artisan
+- .execute
 - Angular Platform
 - Express Domain
 - Pusher Domain
 - Vitest Domain
 - Cache Php
 - Bootstrap Loading
+- extra
+- test
 - @angular/core
 - .execute
+- .getBaseHrefFromDOM
 - np
 - Q0
 
@@ -155,12 +161,12 @@
   docs/confluence-ingestion.md → README-RAG-MVP.md
 - `Laravel Framework Baseline` --conceptually_related_to--> `RAG MVP Architecture`  [INFERRED]
   README.md → README-RAG-MVP.md
-- `VoiceResponseFormatterTest` --references--> `VoiceResponseFormatter`  [EXTRACTED]
-  tests/Unit/VoiceResponseFormatterTest.php → app/Services/Voice/VoiceResponseFormatter.php
 - `Fr()` --indirect_call--> `t()`  [INFERRED]
   public/widget/main.js → public/ng/main-CW5TU5ZB.js
 - `Self Hosted Deploy Job` --conceptually_related_to--> `Angular NG Deployment Shell`  [INFERRED]
   .github/workflows/ci-self-hosted.yml → public/ng/index.html
+- `Self Hosted Deploy Job` --conceptually_related_to--> `Angular Widget Deployment Shell`  [INFERRED]
+  .github/workflows/ci-self-hosted.yml → public/widget/index.html
 
 ## Import Cycles
 - None detected.
@@ -170,115 +176,111 @@
 - **Angular Multi-Target Build Outputs** — frontend_readme_angular_cli_workflow, public_ng_index_angular_ng_deployment_shell, public_widget_index_angular_widget_deployment_shell, public_ng_3rdpartylicenses_third_party_licenses_manifest, public_widget_3rdpartylicenses_third_party_licenses_manifest [INFERRED 0.75]
 - **RAG Ingestion and Sync Boundary** — readme_rag_mvp_rag_mvp_architecture, readme_rag_mvp_chunking_strategy_sliding_window, docs_confluence_ingestion_confluence_ingestion_flow, docs_confluence_ingestion_rag_queue_sync_mechanism [INFERRED 0.85]
 
-## Communities (161 total, 26 thin omitted)
+## Communities (169 total, 30 thin omitted)
 
 ### Community 0 - "Rgdfdfoa Addasyncvalidators"
 Cohesion: 0.01
-Nodes (187): a0(), Ah(), ai(), _allControlsDisabled(), aM(), _anyControls(), _anyControlsDirty(), _anyControlsHaveStatus() (+179 more)
+Nodes (148): addMatch(), Ah(), applyRedirectCommands(), applyRedirectCreateUrlTree(), applyTheme(), assertInAngularZone(), assertNotInAngularZone(), _assignValidators() (+140 more)
 
 ### Community 1 - "Addasyncvalidators Addvalidators"
 Cohesion: 0.02
-Nodes (153): cE(), add(), addAsyncValidators(), addClass(), _addParent(), addValidators(), _anyControls(), _anyControlsDirty() (+145 more)
+Nodes (145): cE(), addAsyncValidators(), addValidators(), _allControlsDisabled(), _anyControls(), _anyControlsDirty(), _anyControlsHaveStatus(), _anyControlsTouched() (+137 more)
 
 ### Community 2 - "Registeronchange Subscribe"
-Cohesion: 0.02
-Nodes (35): iM(), vf(), afterRun(), append(), appendChild(), attachToAppRef(), cr(), cv() (+27 more)
-
-### Community 3 - "Canceldelete Canceledit"
-Cohesion: 0.02
-Nodes (9): cA(), deactivateRouteAndOutlet(), e, eb(), getBaseHref(), Jb(), path(), registerOnChange() (+1 more)
+Cohesion: 0.03
+Nodes (22): iM(), vf(), afterRun(), append(), appendChild(), decoratePreventDefault(), dn(), e (+14 more)
 
 ### Community 4 - "Activatedcomponentref Activatedroute"
-Cohesion: 0.06
-Nodes (131): _2(), a_(), a2(), ak(), An(), ar(), b2(), bk() (+123 more)
+Cohesion: 0.13
+Nodes (40): cancelEdit(), closeCreateModal(), co(), dk(), e2(), f2(), fk(), g2() (+32 more)
 
 ### Community 5 - "Addclass Applyvaluetoinputsignal"
 Cohesion: 0.06
-Nodes (60): ae(), assignPhoneNumber(), be(), bootstrap(), changeOwnPassword(), clearStoredUser(), cp(), crawlWebsite() (+52 more)
+Nodes (71): ae(), assignPhoneNumber(), be(), bootstrap(), changeOwnPassword(), clearStoredUser(), cp(), crawlWebsite() (+63 more)
 
 ### Community 6 - "Php Destroy"
-Cohesion: 0.08
-Nodes (14): AccountController, UserController, AuthenticatedSessionController, ConfluenceIntegrationController, Controller, CountryController, OllamaProxyController, ProjectDocumentController (+6 more)
+Cohesion: 0.07
+Nodes (15): AccountController, UserController, AuthenticatedSessionController, ConfluenceIntegrationController, Controller, CountryController, ProjectChatController, ProjectDocumentController (+7 more)
 
 ### Community 7 - "Php Test"
 Cohesion: 0.05
-Nodes (16): ChatMessage, ChatMessageFeedback, Country, DocumentChunk, MessageCitation, Illuminate\Database\Eloquent\Model, Illuminate\Database\Eloquent\Relations\BelongsTo, Illuminate\Database\Eloquent\Relations\HasMany (+8 more)
+Nodes (13): ChatMessage, Country, Illuminate\Database\Eloquent\Model, Illuminate\Database\Eloquent\Relations\HasMany, Illuminate\Foundation\Testing\RefreshDatabase, Illuminate\Foundation\Testing\TestCase, RegistrationTest, ExampleTest (+5 more)
 
 ### Community 8 - "Test User"
-Cohesion: 0.06
+Cohesion: 0.05
 Nodes (14): Tenant, User, AccessControlService, Illuminate\Database\Eloquent\Builder, Illuminate\Database\Eloquent\Factories\HasFactory, Illuminate\Database\Eloquent\Relations\BelongsToMany, Illuminate\Foundation\Auth\User, Illuminate\Notifications\Notifiable (+6 more)
 
 ### Community 9 - "Attachtoappref Createcomponentref"
-Cohesion: 0.04
-Nodes (85): _1(), a1(), ab(), addMatch(), Af(), aS(), av(), b0() (+77 more)
+Cohesion: 0.08
+Nodes (35): a1(), Af(), ao(), bc(), createComponentRef(), createEmbeddedView(), CT(), dr() (+27 more)
 
 ### Community 10 - "Get Appendchild"
-Cohesion: 0.07
-Nodes (41): fh(), gT(), Qh(), tM(), vT(), Am(), as(), ay() (+33 more)
+Cohesion: 0.04
+Nodes (62): addHeaderEntry(), aE(), appendAll(), applyUpdate(), _assignAsyncValidators(), _assignValidators(), ay(), bt() (+54 more)
 
 ### Community 11 - "Php Construct"
 Cohesion: 0.07
-Nodes (14): CrawlProjectWebsiteJob, EmbedDocumentChunkJob, ProcessProjectDocumentJob, ResyncConfluenceDocumentJob, SyncProjectConfluenceSpaceJob, ProjectConfluenceSpace, DocumentChunkingService, DocumentParserRegistry (+6 more)
+Nodes (14): CrawlProjectWebsiteJob, EmbedDocumentChunkJob, ProcessProjectDocumentJob, ResyncConfluenceDocumentJob, SyncProjectConfluenceSpaceJob, ProjectDocument, DocumentChunkingService, DocumentParserRegistry (+6 more)
 
 ### Community 12 - "Attach Createcomment"
-Cohesion: 0.06
-Nodes (56): applyPaginationMeta(), b_(), clearTimeout(), confirmDeleteDocument(), connectAndLoadConfluenceSpaces(), createChat(), d1(), encodeKey() (+48 more)
+Cohesion: 0.14
+Nodes (21): a0(), at(), attachToViewContainerRef(), ci(), create(), createComponent(), getLView(), gv() (+13 more)
 
 ### Community 13 - "Applystyles Applytohost"
-Cohesion: 0.06
-Nodes (38): activate(), activateChildRoutes(), activateRoutes(), appendAll(), bb(), ci(), clone(), copyFrom() (+30 more)
+Cohesion: 0.03
+Nodes (88): add(), addHeaderEntry(), _addParent(), aM(), appendAll(), appendChild(), _applyFormState(), applyUpdate() (+80 more)
 
 ### Community 14 - "Atlassianconnection Paginationmeta"
-Cohesion: 0.07
-Nodes (6): AtlassianConnection, PaginationMeta, ProjectConfluenceSpace, ProjectDocument, ProjectDocumentsPageComponent, Component
+Cohesion: 0.08
+Nodes (3): ProjectDocument, ProjectDocumentsPageComponent, Component
 
 ### Community 15 - "Warn Addclass"
+Cohesion: 0.10
+Nodes (26): aa(), ad(), bo(), ca(), cd(), cg(), dd(), dispatchEvent() (+18 more)
+
+### Community 16 - "Addcontrol Setvalue"
 Cohesion: 0.08
-Nodes (36): runTask(), aa(), ad(), be(), bo(), ca(), cd(), cg() (+28 more)
+Nodes (5): ProjectAnalyticsController, ChatMessageFeedback, MessageCitation, ProjectConfluenceSpace, Illuminate\Database\Eloquent\Relations\BelongsTo
 
 ### Community 17 - "Component Page"
 Cohesion: 0.08
-Nodes (14): authGuard(), guestGuard(), ProjectLayoutComponent, Component, DashboardPageComponent, Component, LoginPageComponent, Component (+6 more)
+Nodes (17): authGuard(), guestGuard(), AuthResponse, LoginPayload, RegisterPayload, User, DashboardStats, ProjectLayoutComponent (+9 more)
 
 ### Community 18 - "Closepanel Feedbackfor"
 Cohesion: 0.06
-Nodes (69): 594(), A(), ai(), Ao(), bf(), bn(), _c(), cc() (+61 more)
+Nodes (65): 594(), A(), ai(), Ao(), attachToAppRef(), bf(), bn(), _c() (+57 more)
 
 ### Community 19 - "Destroy Adjustindex"
-Cohesion: 0.15
-Nodes (14): ap(), attachToViewContainerRef(), deactivateChildRoutes(), deactivateRouteAndItsChildren(), deactivateRoutes(), detachAndStoreRouteSubtree(), insert(), insertImpl() (+6 more)
+Cohesion: 0.14
+Nodes (9): activate(), activateChildRoutes(), activateRoutes(), deactivateChildRoutes(), deactivateRouteAndItsChildren(), deactivateRouteAndOutlet(), deactivateRoutes(), detachAndStoreRouteSubtree() (+1 more)
 
 ### Community 20 - "Constructor Addheaderentry"
-Cohesion: 0.04
-Nodes (66): Ol(), qo(), addHeaderEntry(), aE(), appendAll(), applyUpdate(), _assignAsyncValidators(), _assignValidators() (+58 more)
+Cohesion: 0.06
+Nodes (57): applyPaginationMeta(), assign(), bindRealtime(), clearTimeout(), confirmDeleteDocument(), connectAndLoadConfluenceSpaces(), createChat(), d1() (+49 more)
 
 ### Community 21 - "Component Createsession"
 Cohesion: 0.07
 Nodes (12): Component, Input, WidgetTheme, ZetesChatComponent, ChatMessage, Citation, CreateSessionResponse, SendMessageResponse (+4 more)
 
 ### Community 23 - "Remove Unsubscribe"
-Cohesion: 0.04
-Nodes (70): ad(), add(), _addParent(), applyUpdate(), Bd(), bi(), _d(), detectChanges() (+62 more)
+Cohesion: 0.12
+Nodes (29): bi(), closeModal(), Ff(), hf(), HI(), hn(), iE(), il() (+21 more)
 
 ### Community 25 - "Complete Documentstatusentries"
-Cohesion: 0.05
-Nodes (51): _0(), addClass(), _adjustIndex(), b1(), bindRealtime(), c0(), c1(), destroy() (+43 more)
+Cohesion: 0.07
+Nodes (36): _0(), addClass(), _adjustIndex(), b1(), c0(), c1(), clear(), destroy() (+28 more)
 
 ### Community 26 - "Applypaginationmeta Confirmdeletedocument"
-Cohesion: 0.09
-Nodes (33): Cf(), di(), Ed(), eo(), eS(), fp(), gc(), injectableDefInScope() (+25 more)
+Cohesion: 0.10
+Nodes (30): _d(), di(), dt(), Ed(), f0(), fI(), fp(), g1() (+22 more)
 
 ### Community 27 - "Chatdisplaytimestamp Createtext"
-Cohesion: 0.13
-Nodes (18): bh(), af(), applyPrimaryColor(), defaultSettings(), getSystemTheme(), hu(), ju(), loadSettings() (+10 more)
+Cohesion: 0.05
+Nodes (50): Aa(), addControl(), _allControlsDisabled(), _anyControls(), _anyControlsDirty(), _anyControlsHaveStatus(), _anyControlsTouched(), asyncValidator() (+42 more)
 
 ### Community 28 - "Appendall Areallvisibleconfluencespacesselected"
-Cohesion: 0.10
-Nodes (21): Aa(), addControl(), _cancelExistingSubscription(), fA(), iA(), markAllAsDirty(), markAsDirty(), patchValue() (+13 more)
-
-### Community 30 - "Bootstrap Afterpreactivation"
-Cohesion: 0.11
-Nodes (14): applyStyles(), applyToHost(), bA(), dd(), Gb(), jD(), pd(), r1() (+6 more)
+Cohesion: 0.24
+Nodes (5): bA(), Gb(), _registerOnDestroy(), registerOnDisabledChange(), _unregisterOnDisabledChange()
 
 ### Community 31 - "Test Document"
 Cohesion: 0.06
@@ -286,55 +288,63 @@ Nodes (30): 10. Phase 8 — Tests, 11. Sequencing and effort, 11b. Measured late
 
 ### Community 32 - "Getuseragent Producermustrecompute"
 Cohesion: 0.06
-Nodes (49): Ba(), Bg(), by(), cf(), cm(), Cs(), cu(), destroy() (+41 more)
+Nodes (46): Ba(), Bg(), by(), cm(), createComment(), dy(), ef(), Fi() (+38 more)
 
 ### Community 33 - "Attachtoviewcontainerref Chatdisplaysubtitle"
 Cohesion: 0.30
 Nodes (15): capture(), consumeOptional(), parse(), parseChildren(), parseFragment(), parseMatrixParams(), parseParam(), parseParens() (+7 more)
 
 ### Community 34 - "Fac Withconfig"
-Cohesion: 0.08
-Nodes (46): bg(), Bt(), cg(), De(), dg(), ec(), eg(), et() (+38 more)
+Cohesion: 0.07
+Nodes (57): ai(), bg(), Bt(), cA(), cg(), createText(), De(), detectContentTypeHeader() (+49 more)
 
 ### Community 35 - "Core Group 35"
-Cohesion: 0.06
-Nodes (57): mE(), rp(), xT(), Yh(), al(), Br(), buildHeaders(), cl() (+49 more)
+Cohesion: 0.04
+Nodes (77): mE(), rp(), add(), _addParent(), al(), Bi(), buildHeaders(), cl() (+69 more)
 
 ### Community 36 - "Allcontrolsdisabled Applyformstate"
-Cohesion: 0.10
-Nodes (29): _allControlsDisabled(), _applyFormState(), asyncValidator(), _calculateStatus(), _cancelExistingSubscription(), disable(), enable(), _forEachChild() (+21 more)
+Cohesion: 0.14
+Nodes (36): _2(), a2(), copyEmbedCode(), crawledUrlsTotalPages(), d2(), DN(), documentsTotalPages(), ek() (+28 more)
 
 ### Community 37 - "Test Confluence"
-Cohesion: 0.30
-Nodes (3): ConfluenceApiService, Illuminate\Http\Client\PendingRequest, Illuminate\Http\Client\Response
+Cohesion: 0.13
+Nodes (4): AtlassianConnection, ConfluenceApiService, Illuminate\Http\Client\PendingRequest, ConfluenceIntegrationTest
+
+### Community 38 - "Widgetchatcontroller Projectcontroller"
+Cohesion: 0.11
+Nodes (29): An(), bk(), confluenceDocumentError(), gk(), gl(), H(), hasConfluenceSyncIssue(), hk() (+21 more)
 
 ### Community 39 - "Changeownpassword Clearstoreduser"
 Cohesion: 0.10
-Nodes (20): ag(), applyStyles(), applyToHost(), bu(), emit(), handleError(), hh(), jh() (+12 more)
+Nodes (22): qo(), addClass(), cr(), cv(), emit(), flush(), flushQueue(), handleError() (+14 more)
 
 ### Community 40 - "Component Theme"
-Cohesion: 0.09
-Nodes (13): Theme, ThemeService, Injectable, AppShellComponent, Component, HeaderComponent, Component, Input (+5 more)
+Cohesion: 0.12
+Nodes (11): Theme, ThemeService, Injectable, HeaderComponent, Component, Input, Output, SidebarComponent (+3 more)
 
 ### Community 41 - "Test User"
-Cohesion: 0.10
-Nodes (4): ProjectController, Project, self, ProjectManagementTest
+Cohesion: 0.05
+Nodes (45): i1(), o1(), runTask(), xT(), Yh(), Ah(), bh(), Br() (+37 more)
 
 ### Community 42 - "Attach Clone"
-Cohesion: 0.10
-Nodes (26): Ac(), ao(), attachToAppRef(), bf(), $c(), Cc(), cd(), cy() (+18 more)
+Cohesion: 0.07
+Nodes (37): Ac(), attachToAppRef(), bf(), $c(), Cc(), cd(), Cf(), cy() (+29 more)
 
 ### Community 43 - "Component Page"
 Cohesion: 0.14
 Nodes (6): countryLabel(), Country, Tenant, TenantsPageComponent, Component, roles
 
 ### Community 44 - "Component Chatmessage"
-Cohesion: 0.19
-Nodes (3): ChatSession, ProjectChatPageComponent, Component
+Cohesion: 0.08
+Nodes (12): ChatMessage, ChatSession, Citation, ChatChannelSubscription, ChatEventHandlers, RealtimeChatEventPayload, ReverbResolvedConfig, ReverbRuntimeConfig (+4 more)
+
+### Community 45 - "Attachview Compilemoduleandallcomponentsasync"
+Cohesion: 0.13
+Nodes (29): a_(), ak(), ar(), b2(), bR(), c2(), cancelDelete(), chatDisplaySubtitle() (+21 more)
 
 ### Community 46 - "Construct Php"
-Cohesion: 0.07
-Nodes (37): Ar(), at(), au(), Bd(), bm(), dm(), Ea(), fm() (+29 more)
+Cohesion: 0.09
+Nodes (28): Ar(), ev(), If(), jy(), ki(), kr(), Li(), lv() (+20 more)
 
 ### Community 47 - "Angular Cli"
 Cohesion: 0.09
@@ -345,8 +355,8 @@ Cohesion: 0.16
 Nodes (3): Project, ProjectsPageComponent, Component
 
 ### Community 49 - "Capture Consumeoptional"
-Cohesion: 0.14
-Nodes (6): detectContentTypeHeader(), getGlobalEventTarget(), onAndCancel(), runGuarded(), runOutsideAngular(), vM()
+Cohesion: 0.24
+Nodes (3): getGlobalEventTarget(), onAndCancel(), runGuarded()
 
 ### Community 50 - "Angular Common"
 Cohesion: 0.10
@@ -358,22 +368,22 @@ Nodes (19): axios, concurrently, laravel-vite-plugin, devDependencies, axios, co
 
 ### Community 52 - "Element Domain"
 Cohesion: 0.15
-Nodes (15): ApiItemResponse, ApiListResponse, ApiPaginatedResponse, ChatMessage, Citation, ConfluenceSpace, CrawledUrl, DocumentChunkPreview (+7 more)
+Nodes (14): ApiItemResponse, ApiListResponse, ApiPaginatedResponse, AtlassianConnection, ConfluenceSpace, CrawledUrl, DocumentChunkPreview, PaginationMeta (+6 more)
 
 ### Community 53 - "Construct Contextretrievalservice"
-Cohesion: 0.26
-Nodes (4): WarmVoiceModelsCommand, OllamaEmbeddingService, OllamaGenerationService, Illuminate\Console\Command
+Cohesion: 0.13
+Nodes (6): WarmVoiceModelsCommand, DocumentChunk, ContextRetrievalService, OllamaEmbeddingService, OllamaGenerationService, Illuminate\Console\Command
 
 ### Community 54 - "Server Routes"
-Cohesion: 0.09
-Nodes (16): App, appConfig, config, serverConfig, routes, serverRoutes, Component, AuthResponse (+8 more)
+Cohesion: 0.12
+Nodes (11): App, appConfig, config, serverConfig, routes, serverRoutes, Component, AuthService (+3 more)
 
 ### Community 56 - "Chateventhandlers Reverbservice"
-Cohesion: 0.21
-Nodes (3): ChatEventHandlers, ReverbService, Injectable
+Cohesion: 0.15
+Nodes (13): ag(), applyStyles(), applyToHost(), bu(), hh(), kg(), Lg(), Mh() (+5 more)
 
 ### Community 57 - "Createsnapshot Expandsegmentagainstrouteusingredirect"
-Cohesion: 0.18
+Cohesion: 0.11
 Nodes (4): append(), hh(), Pr(), Th()
 
 ### Community 59 - "Angular Shell"
@@ -381,32 +391,32 @@ Cohesion: 0.15
 Nodes (17): Self Hosted Deploy Job, Project Conventions Guide, Graphify Query-First Rule, Confluence Ingestion Flow, RAG Queue Sync Mechanism, Angular CLI Workflow, Angular App Root Shell, Zetes Chat Embed Configuration (+9 more)
 
 ### Community 60 - "Php Authorizetelescopeaccess"
-Cohesion: 0.16
-Nodes (8): AuthorizeTelescopeAccess, ValidateTwilioRequest, ValidateWidgetRequest, TelescopeServiceProvider, Closure, Illuminate\Foundation\Configuration\Middleware, Laravel\Telescope\TelescopeApplicationServiceProvider, Symfony\Component\HttpFoundation\Response
+Cohesion: 0.09
+Nodes (12): OllamaProxyController, AuthorizeTelescopeAccess, ValidateTwilioRequest, ValidateWidgetRequest, TelescopeServiceProvider, Closure, Illuminate\Foundation\Configuration\Middleware, Illuminate\Http\Client\Response (+4 more)
+
+### Community 62 - "Path Getpath"
+Cohesion: 0.18
+Nodes (3): keys(), nb(), toString()
 
 ### Community 63 - "vy"
-Cohesion: 0.09
-Nodes (27): hc(), og(), attach(), av(), create(), detach(), df(), du() (+19 more)
+Cohesion: 0.04
+Nodes (67): bh(), af(), Am(), at(), attach(), au(), av(), Bd() (+59 more)
 
 ### Community 64 - "o1"
-Cohesion: 0.07
-Nodes (36): i1(), o1(), Ah(), bh(), bt(), ed(), _find(), get() (+28 more)
+Cohesion: 0.06
+Nodes (44): Qh(), as(), B(), bs(), co(), Cs(), da(), destroy() (+36 more)
 
 ### Community 65 - "Php Artisan"
 Cohesion: 0.13
-Nodes (15): scripts, post-autoload-dump, post-create-project-cmd, post-update-cmd, pre-package-uninstall, test, Illuminate\\Foundation\\ComposerScripts::postAutoloadDump, Illuminate\\Foundation\\ComposerScripts::prePackageUninstall (+7 more)
+Nodes (16): scripts, post-autoload-dump, post-root-package-install, post-update-cmd, pre-package-uninstall, setup, composer install, Illuminate\\Foundation\\ComposerScripts::postAutoloadDump (+8 more)
 
 ### Community 66 - "Composer Json"
 Cohesion: 0.14
-Nodes (13): autoload-dev, psr-4, description, extra, laravel, dont-discover, license, minimum-stability (+5 more)
+Nodes (13): autoload-dev, psr-4, description, keywords, license, minimum-stability, name, prefer-stable (+5 more)
 
 ### Community 67 - ".bootstrapImpl"
 Cohesion: 0.05
-Nodes (42): 207(), Ag(), appendChild(), applyValueToInputSignal(), attach(), Ay(), ch(), clear() (+34 more)
-
-### Community 68 - "q1"
-Cohesion: 0.10
-Nodes (29): bc(), Bv(), co(), cv(), Dc(), dv(), e0(), Fc() (+21 more)
+Nodes (52): 207(), ab(), Ag(), ap(), applyValueToInputSignal(), Ay(), Bv(), cv() (+44 more)
 
 ### Community 70 - "Styles Browser"
 Cohesion: 0.15
@@ -424,9 +434,13 @@ Nodes (3): VoiceSettings, ProjectPhonePageComponent, Component
 Cohesion: 0.15
 Nodes (13): require, ext-dom, ext-libxml, laravel/framework, laravel/reverb, laravel/sanctum, laravel/telescope, laravel/tinker (+5 more)
 
+### Community 74 - "rr"
+Cohesion: 0.24
+Nodes (11): ea(), fA(), id(), Km(), nh(), ny(), qb(), qi() (+3 more)
+
 ### Community 76 - "Php Documentparseexception"
-Cohesion: 0.14
-Nodes (4): TwilioNumberService, TwilioNumberServiceTest, Twilio\Base\PhoneNumberCapabilities, Twilio\Rest\Client
+Cohesion: 0.12
+Nodes (6): UnsupportedDocumentTypeException, TwilioNumberService, RuntimeException, TwilioNumberServiceTest, Twilio\Base\PhoneNumberCapabilities, Twilio\Rest\Client
 
 ### Community 77 - "Illuminate Projectchatmessagecreated"
 Cohesion: 0.29
@@ -441,8 +455,8 @@ Cohesion: 0.33
 Nodes (3): WidgetSettings, ProjectWidgetPageComponent, Component
 
 ### Community 80 - ".handleRouterEvent"
-Cohesion: 0.31
-Nodes (7): complete(), error(), ld(), md(), next(), rg(), Ua()
+Cohesion: 0.09
+Nodes (29): ad(), Bd(), complete(), error(), hc(), ig(), ii(), j0() (+21 more)
 
 ### Community 83 - "Build Builder"
 Cohesion: 0.22
@@ -459,18 +473,6 @@ Nodes (8): compilerOptions, outDir, exclude, extends, include, src/**/*.spec.ts,
 ### Community 87 - "Docxparser Phpoffice"
 Cohesion: 0.39
 Nodes (3): DocxParser, PhpOffice\PhpWord\Element\AbstractElement, PhpOffice\PhpWord\Element\Table
-
-### Community 89 - "Install Php"
-Cohesion: 0.25
-Nodes (8): post-root-package-install, setup, composer install, npm install, npm run build, @php artisan key:generate, @php artisan migrate --force, @php -r \"file_exists('.env') || copy('.env.example', '.env');\
-
-### Community 90 - "Emit Handleerror"
-Cohesion: 0.60
-Nodes (3): DatabaseSeeder, Illuminate\Database\Console\Seeds\WithoutModelEvents, Illuminate\Database\Seeder
-
-### Community 91 - "Checkfinalizedstatuses Error"
-Cohesion: 0.32
-Nodes (3): DocumentParseException, UnsupportedDocumentTypeException, RuntimeException
 
 ### Community 92 - "Pestphp Pest"
 Cohesion: 0.29
@@ -500,6 +502,10 @@ Nodes (6): configurations, development, buildTarget, extractLicenses, optimizati
 Cohesion: 0.33
 Nodes (6): prefix, projectType, root, schematics, sourceRoot, frontend
 
+### Community 102 - "sk"
+Cohesion: 0.60
+Nodes (3): DatabaseSeeder, Illuminate\Database\Console\Seeds\WithoutModelEvents, Illuminate\Database\Seeder
+
 ### Community 103 - "Database Autoload"
 Cohesion: 0.40
 Nodes (5): autoload, psr-4, App\\, Database\\Factories\\, Database\\Seeders\\
@@ -518,7 +524,7 @@ Nodes (4): angularApp, app, browserDistFolder, reqHandler
 
 ### Community 108 - "Ngvalue Setelementvalue"
 Cohesion: 0.08
-Nodes (8): ProjectAnalyticsController, ProjectChatController, WidgetChatController, ChatSession, ChatAnswerService, ProjectAccessService, Carbon\CarbonInterface, Illuminate\Database\Eloquent\Relations\HasOne
+Nodes (8): ProjectController, WidgetChatController, ChatSession, Project, Carbon\CarbonInterface, Illuminate\Database\Eloquent\Relations\HasOne, self, ProjectChatTest
 
 ### Community 109 - "Angular Cli"
 Cohesion: 0.50
@@ -533,8 +539,8 @@ Cohesion: 0.25
 Nodes (3): ValidateCsrfToken, Illuminate\Foundation\Http\Middleware\ValidateCsrfToken, CsrfExclusionTest
 
 ### Community 113 - "Keywords Framework"
-Cohesion: 0.67
-Nodes (3): keywords, framework, laravel
+Cohesion: 0.50
+Nodes (4): post-create-project-cmd, @php artisan key:generate --ansi, @php artisan migrate --graceful --ansi, @php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\
 
 ### Community 114 - "Php Artisan"
 Cohesion: 0.67
@@ -542,19 +548,27 @@ Nodes (3): dev, Composer\\Config::disableProcessTimeout, npx concurrently -c \"#
 
 ### Community 143 - "Cache Php"
 Cohesion: 0.08
-Nodes (9): ProjectVoiceController, TwilioVoiceController, AnswerVoiceTurnJob, PhoneCall, VoiceResponseFormatter, VoiceSettings, VoiceTurnStore, Illuminate\Http\Response (+1 more)
+Nodes (11): TwilioVoiceController, AnswerVoiceTurnJob, PhoneCall, AnswerOptions, ChatAnswerService, VoiceSettings, VoiceTurnStore, Illuminate\Http\Response (+3 more)
+
+### Community 162 - "extra"
+Cohesion: 0.67
+Nodes (3): extra, laravel, dont-discover
+
+### Community 163 - "test"
+Cohesion: 0.67
+Nodes (3): test, @php artisan config:clear --ansi, @php artisan test
 
 ### Community 165 - ".execute"
-Cohesion: 0.13
-Nodes (11): addHeaderEntry(), afterRun(), bp(), constructor(), D0(), flush(), flushQueue(), maybeSetNormalizedName() (+3 more)
+Cohesion: 0.11
+Nodes (27): _1(), aS(), b0(), Bn(), bs(), cs(), Df(), elementStart() (+19 more)
 
 ### Community 167 - "np"
-Cohesion: 0.13
-Nodes (22): cb(), createSnapshot(), expandSegmentAgainstRouteUsingRedirect(), fb(), getChildConfig(), GM(), hasChildren(), matchSegmentAgainstRoute() (+14 more)
+Cohesion: 0.09
+Nodes (29): cb(), createSnapshot(), eo(), expandSegmentAgainstRouteUsingRedirect(), fb(), getChildConfig(), GM(), hasChildren() (+21 more)
 
 ### Community 170 - "Q0"
-Cohesion: 0.12
-Nodes (10): _assignAsyncValidators(), Gh(), Ji(), no(), Q0(), _setAsyncValidators(), TA(), vd() (+2 more)
+Cohesion: 0.14
+Nodes (7): getUserAgent(), Gh(), Ji(), nA(), Q0(), TA(), wg()
 
 ## Ambiguous Edges - Review These
 - `Zetes Chat Embed Configuration` → `Angular Widget Deployment Shell`  [AMBIGUOUS]
@@ -563,19 +577,19 @@ Nodes (10): _assignAsyncValidators(), Gh(), Ji(), no(), Q0(), _setAsyncValidator
 ## Knowledge Gaps
 - **191 isolated node(s):** `npx`, `@angular/cli`, `$schema`, `name`, `type` (+186 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **26 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **30 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `Zetes Chat Embed Configuration` and `Angular Widget Deployment Shell`?**
   _Edge tagged AMBIGUOUS (relation: references) - confidence is low._
-- **Why does `t()` connect `Attach Createcomment` to `Rgdfdfoa Addasyncvalidators`, `Addasyncvalidators Addvalidators`, `Canceldelete Canceledit`, `Activatedcomponentref Activatedroute`, `Addclass Applyvaluetoinputsignal`, `Attachtoappref Createcomponentref`, `Get Appendchild`, `Applystyles Applytohost`, `Warn Addclass`, `Closepanel Feedbackfor`, `Destroy Adjustindex`, `Constructor Addheaderentry`, `Remove Unsubscribe`, `Complete Documentstatusentries`, `Applypaginationmeta Confirmdeletedocument`, `Chatdisplaytimestamp Createtext`, `Appendall Areallvisibleconfluencespacesselected`, `Bootstrap Afterpreactivation`, `Getuseragent Producermustrecompute`, `Fac Withconfig`, `Core Group 35`, `.execute`, `np`, `Attach Clone`, `Q0`, `Component Chatmessage`, `Construct Php`, `Createsnapshot Expandsegmentagainstrouteusingredirect`, `vy`, `o1`, `.bootstrapImpl`, `q1`, `.handleRouterEvent`?**
-  _High betweenness centrality (0.148) - this node is a cross-community bridge._
-- **Why does `ProjectChatPageComponent` connect `Component Chatmessage` to `Component Page`, `Element Domain`?**
-  _High betweenness centrality (0.138) - this node is a cross-community bridge._
-- **Why does `e` connect `Canceldelete Canceledit` to `Rgdfdfoa Addasyncvalidators`, `Addasyncvalidators Addvalidators`, `Activatedcomponentref Activatedroute`, `Addclass Applyvaluetoinputsignal`, `Attachtoappref Createcomponentref`, `Get Appendchild`, `Attach Createcomment`, `Applystyles Applytohost`, `Destroy Adjustindex`, `Remove Unsubscribe`, `Complete Documentstatusentries`, `Applypaginationmeta Confirmdeletedocument`, `Appendall Areallvisibleconfluencespacesselected`, `Bootstrap Afterpreactivation`, `Fac Withconfig`, `Core Group 35`, `.execute`, `Q0`, `Attach Clone`, `Component Chatmessage`, `Capture Consumeoptional`, `Createsnapshot Expandsegmentagainstrouteusingredirect`, `.bootstrapImpl`, `q1`, `.handleRouterEvent`?**
-  _High betweenness centrality (0.081) - this node is a cross-community bridge._
+- **Why does `ProjectChatPageComponent` connect `Component Chatmessage` to `Component Page`?**
+  _High betweenness centrality (0.141) - this node is a cross-community bridge._
+- **Why does `t()` connect `Fac Withconfig` to `Rgdfdfoa Addasyncvalidators`, `An`, `Addasyncvalidators Addvalidators`, `Canceldelete Canceledit`, `Activatedcomponentref Activatedroute`, `Addclass Applyvaluetoinputsignal`, `.execute`, `Attachtoappref Createcomponentref`, `Get Appendchild`, `Attach Createcomment`, `Applystyles Applytohost`, `Closepanel Feedbackfor`, `Constructor Addheaderentry`, `Remove Unsubscribe`, `Complete Documentstatusentries`, `Applypaginationmeta Confirmdeletedocument`, `Chatdisplaytimestamp Createtext`, `Getuseragent Producermustrecompute`, `Core Group 35`, `Allcontrolsdisabled Applyformstate`, `.execute`, `Widgetchatcontroller Projectcontroller`, `np`, `Test User`, `Attach Clone`, `Q0`, `Component Chatmessage`, `Attachview Compilemoduleandallcomponentsasync`, `Createsnapshot Expandsegmentagainstrouteusingredirect`, `Path Getpath`, `vy`, `o1`, `.bootstrapImpl`, `q1`, `rr`, `.handleRouterEvent`, `mf`?**
+  _High betweenness centrality (0.140) - this node is a cross-community bridge._
+- **Why does `e` connect `Canceldelete Canceledit` to `Rgdfdfoa Addasyncvalidators`, `Addasyncvalidators Addvalidators`, `Bd`, `An`, `.execute`, `Addclass Applyvaluetoinputsignal`, `Activatedcomponentref Activatedroute`, `Attach Createcomment`, `Applystyles Applytohost`, `Destroy Adjustindex`, `Constructor Addheaderentry`, `Remove Unsubscribe`, `Complete Documentstatusentries`, `Applypaginationmeta Confirmdeletedocument`, `Chatdisplaytimestamp Createtext`, `Appendall Areallvisibleconfluencespacesselected`, `Bootstrap Afterpreactivation`, `Fac Withconfig`, `.execute`, `.getBaseHrefFromDOM`, `Test User`, `Attach Clone`, `Q0`, `Component Chatmessage`, `Attachview Compilemoduleandallcomponentsasync`, `Capture Consumeoptional`, `Createsnapshot Expandsegmentagainstrouteusingredirect`, `Path Getpath`, `.bootstrapImpl`, `q1`, `rr`, `.handleRouterEvent`, `mf`, `Checkfinalizedstatuses Error`, `.prepareExternalUrl`?**
+  _High betweenness centrality (0.084) - this node is a cross-community bridge._
 - **Are the 159 inferred relationships involving `t()` (e.g. with `_1()` and `Ah()`) actually correct?**
   _`t()` has 159 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 19 inferred relationships involving `u()` (e.g. with `t()` and `g()`) actually correct?**

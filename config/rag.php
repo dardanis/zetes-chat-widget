@@ -98,6 +98,21 @@ return [
         'generation_model' => env('OLLAMA_GENERATION_MODEL', 'llama3'),
         'timeout' => (int) env('OLLAMA_TIMEOUT_SECONDS', 120),
         'proxy_allow_remote' => (bool) env('OLLAMA_PROXY_ALLOW_REMOTE', false),
+
+        /*
+         * Shared secret for the OpenAI-compatible proxy at /api/ollama. Setting it lets a
+         * client on another host authenticate with a bearer token the way an OpenAI SDK
+         * does, and it then replaces the local-only IP check as the access gate. Leave it
+         * empty to keep the proxy restricted to local requests.
+         */
+        'proxy_api_key' => env('OLLAMA_PROXY_API_KEY', ''),
+
+        /*
+         * Logs each proxied request and response to the application log. Useful for
+         * seeing what an opaque client (an IDE plugin) actually sends. Off by default:
+         * the log will contain full prompt contents while it is on.
+         */
+        'proxy_debug' => (bool) env('OLLAMA_PROXY_DEBUG', false),
     ],
 
     'confluence' => [

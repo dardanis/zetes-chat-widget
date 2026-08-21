@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/OllamaProxyController.php": {
-    "mtime": 1781536464.2850888,
-    "ast_hash": "1a888a86f5079403466bbef7575ed91c",
+    "mtime": 1787261223.3480163,
+    "ast_hash": "120c40ed4d7d911295325bf6b0d51ae0",
     "semantic_hash": ""
   },
   "app/Http/Controllers/ProjectAnalyticsController.php": {
@@ -440,8 +440,8 @@
     "semantic_hash": ""
   },
   "config/rag.php": {
-    "mtime": 1786017722.5202255,
-    "ast_hash": "b99343b9eb67bf11906e9c339801e7e1",
+    "mtime": 1787260022.7295475,
+    "ast_hash": "6050b8a44f330a078579dbbe25be4500",
     "semantic_hash": ""
   },
   "config/reverb.php": {
@@ -925,8 +925,8 @@
     "semantic_hash": ""
   },
   "tests/Feature/OllamaProxyTest.php": {
-    "mtime": 1781536407.1737113,
-    "ast_hash": "3c6d5de14c9eac0d37485d1e96c56136",
+    "mtime": 1787261372.379466,
+    "ast_hash": "7251ac3e81d33d51ad6569247d01f7dc",
     "semantic_hash": ""
   },
   "tests/Feature/ProjectAccessIsolationTest.php": {
@@ -1050,8 +1050,8 @@
     "semantic_hash": ""
   },
   "public/chat.html": {
-    "mtime": 1785226136.0944538,
-    "ast_hash": "9f73ae317f2ffbfdd0390d01a3c42819",
+    "mtime": 1786091336.202,
+    "ast_hash": "635d7b7782faf4ef13ba5ecbda850b40",
     "semantic_hash": ""
   },
   "public/ng/3rdpartylicenses.txt": {
