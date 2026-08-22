@@ -88,7 +88,7 @@ return [
         'min_speech_confidence' => (float) env('VOICE_MIN_SPEECH_CONFIDENCE', 0.3),
         'max_speech_hints' => (int) env('VOICE_MAX_SPEECH_HINTS', 50),
 
-        'default_tts_voice' => env('VOICE_DEFAULT_TTS_VOICE', 'Polly.Joanna'),
+        'default_tts_voice' => env('VOICE_DEFAULT_TTS_VOICE', 'Polly.Joanna-Neural'),
         'default_language' => env('VOICE_DEFAULT_LANGUAGE', 'en-US'),
     ],
 

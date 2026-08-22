@@ -74,8 +74,12 @@ import { PhoneCall, PhoneCaller, RagApiService, VoiceSettings } from '../core/ra
               <label class="space-y-1.5">
                 <span class="text-xs font-medium text-[var(--app-text-muted)]">Voice</span>
                 <select name="ttsVoice" [(ngModel)]="settings.tts_voice" class="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-sm text-[var(--app-text)] outline-none focus:ring-2 focus:ring-[var(--app-accent)]/40">
-                  @for (voice of voiceOptions; track voice) {
-                    <option [value]="voice">{{ voice }}</option>
+                  @for (group of voiceOptions; track group.label) {
+                    <optgroup [label]="group.label">
+                      @for (voice of group.voices; track voice.value) {
+                        <option [value]="voice.value">{{ voice.label }}</option>
+                      }
+                    </optgroup>
                   }
                 </select>
               </label>
@@ -252,18 +256,65 @@ export class ProjectPhonePageComponent implements OnInit {
   protected settings: VoiceSettings = this.defaultSettings();
   protected phoneNumberInput = '';
 
+  /*
+   * Grouped by Twilio's TTS tier, because the tier is the only thing that decides whether a
+   * caller hears a person or a robot -- switching between two voices in the same tier changes
+   * who the robot is, not that it is one. Generative > Neural > Standard > Basic, and the
+   * cheap tiers are kept only so existing projects that saved one still show their value.
+   *
+   * A voice carries its own language, so the Language field below is really only consulted for
+   * the Basic voices; picking a UK voice with en-US selected is harmless, but picking an
+   * English voice for a non-English language is not -- it reads the text with English phonemes.
+   */
   protected readonly voiceOptions = [
-    'Polly.Joanna',
-    'Polly.Matthew',
-    'Polly.Amy',
-    'Polly.Brian',
-    'Polly.Lupe',
-    'Polly.Vicki',
-    'Google.en-US-Neural2-C',
-    'Google.en-GB-Neural2-A',
-    'alice',
-    'man',
-    'woman',
+    {
+      label: 'Generative - most natural (beta, billed per character)',
+      voices: [
+        { value: 'Polly.Joanna-Generative', label: 'Joanna - US female' },
+        { value: 'Polly.Danielle-Generative', label: 'Danielle - US female' },
+        { value: 'Polly.Ruth-Generative', label: 'Ruth - US female' },
+        { value: 'Polly.Matthew-Generative', label: 'Matthew - US male' },
+        { value: 'Polly.Stephen-Generative', label: 'Stephen - US male' },
+        { value: 'Polly.Amy-Generative', label: 'Amy - UK female' },
+        { value: 'Google.en-US-Chirp3-HD-Aoede', label: 'Aoede - US female (Google)' },
+        { value: 'Google.en-US-Chirp3-HD-Charon', label: 'Charon - US male (Google)' },
+      ],
+    },
+    {
+      label: 'Neural - natural, generally available',
+      voices: [
+        { value: 'Polly.Joanna-Neural', label: 'Joanna - US female' },
+        { value: 'Polly.Kendra-Neural', label: 'Kendra - US female' },
+        { value: 'Polly.Kimberly-Neural', label: 'Kimberly - US female' },
+        { value: 'Polly.Matthew-Neural', label: 'Matthew - US male' },
+        { value: 'Polly.Joey-Neural', label: 'Joey - US male' },
+        { value: 'Polly.Amy-Neural', label: 'Amy - UK female' },
+        { value: 'Polly.Emma-Neural', label: 'Emma - UK female' },
+        { value: 'Polly.Brian-Neural', label: 'Brian - UK male' },
+        { value: 'Google.en-US-Neural2-C', label: 'Neural2-C - US female (Google)' },
+        { value: 'Google.en-US-Neural2-J', label: 'Neural2-J - US male (Google)' },
+        { value: 'Google.en-GB-Neural2-N', label: 'Neural2-N - UK female (Google)' },
+      ],
+    },
+    {
+      label: 'Standard - robotic, cheapest',
+      voices: [
+        { value: 'Polly.Joanna', label: 'Joanna - US female' },
+        { value: 'Polly.Matthew', label: 'Matthew - US male' },
+        { value: 'Polly.Amy', label: 'Amy - UK female' },
+        { value: 'Polly.Brian', label: 'Brian - UK male' },
+        { value: 'Polly.Vicki', label: 'Vicki - German female' },
+        { value: 'Polly.Lupe', label: 'Lupe - US Spanish female' },
+      ],
+    },
+    {
+      label: 'Basic - legacy, not recommended',
+      voices: [
+        { value: 'alice', label: 'alice' },
+        { value: 'man', label: 'man' },
+        { value: 'woman', label: 'woman' },
+      ],
+    },
   ];
 
   protected readonly languageOptions = [
@@ -396,7 +447,7 @@ export class ProjectPhonePageComponent implements OnInit {
     return {
       enabled: false,
       greeting: 'Hello, thanks for calling. How can I help you today?',
-      tts_voice: 'Polly.Joanna',
+      tts_voice: 'Polly.Joanna-Neural',
       language: 'en-US',
       speech_timeout: 'auto',
       max_turns: 20,
